@@ -1,0 +1,192 @@
+@model IReadOnlyList<PurchaseOrder>
+@*  Module 4 — reproduces wireframe order-enquiry-desktop.png  *@
+@{
+    Layout = "_ConsoleLayout";
+    ViewData["Title"] = "Order Enquiry";
+    ViewData["Nav"] = "orders";
+
+    var query = ViewBag.Query as string;
+    var status = ViewBag.Status as PurchaseOrderStatus?;
+    var siteId = ViewBag.SiteId as int?;
+    var supplierId = ViewBag.SupplierId as int?;
+    var sites = ViewBag.Sites as IReadOnlyList<Site> ?? new List<Site>();
+    var suppliers = ViewBag.Suppliers as IReadOnlyList<Supplier> ?? new List<Supplier>();
+    var detail = ViewBag.Selected as OrderEnquiryResult;
+}
+
+<div class="page-head">
+    <div>
+        <h1 class="page-title">Order Enquiry</h1>
+        <p class="page-sub">Search, filter, and drill down into site purchase requisitions</p>
+    </div>
+</div>
+
+<div class="triple">
+
+    @* ---------------- filters ---------------- *@
+    <form class="card" method="get" asp-action="Portal">
+        <div class="card__body">
+            <div class="section-label" style="margin-top:0;">Filters</div>
+
+            <div class="field">
+                <label class="label" for="siteId">Construction Site</label>
+                <select class="select" id="siteId" name="siteId">
+                    <option value="">All Sites</option>
+                    @foreach (var s in sites)
+                    {
+                        <option value="@s.Id" selected="@(siteId == s.Id)">@s.SiteName</option>
+                    }
+                </select>
+            </div>
+
+            <div class="field">
+                <label class="label" for="supplierId">Supplier</label>
+                <select class="select" id="supplierId" name="supplierId">
+                    <option value="">All Suppliers</option>
+                    @foreach (var s in suppliers)
+                    {
+                        <option value="@s.Id" selected="@(supplierId == s.Id)">@s.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="field">
+                <label class="label" for="status">Status</label>
+                <select class="select" id="status" name="status">
+                    <option value="">Select statuses</option>
+                    @foreach (var s in Enum.GetValues<PurchaseOrderStatus>())
+                    {
+                        <option value="@s" selected="@(status == s)">@StatusDisplay.Label(s)</option>
+                    }
+                </select>
+            </div>
+
+            <div class="field">
+                <label class="label" for="q">Reference / keyword</label>
+                <input class="input" type="search" id="q" name="q" value="@query" placeholder="PO-2026-…" />
+            </div>
+
+            <button type="submit" class="btn btn--primary btn--block mb-8">Apply Filters</button>
+            <a asp-action="Portal" class="btn--link w-100 text-center" style="display:block;">Clear all</a>
+        </div>
+    </form>
+
+    @* ---------------- results + detail ---------------- *@
+    <div class="split">
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>PO Reference</th>
+                        <th>Site</th>
+                        <th>Supplier</th>
+                        <th class="num">Total Value</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Count == 0)
+                    {
+                        <tr><td colspan="5" class="muted text-center" style="padding:34px;">No orders match these filters.</td></tr>
+                    }
+                    @foreach (var o in Model.OrderByDescending(o => o.DateCreated))
+                    {
+                        <tr>
+                            <td>
+                                <a asp-action="Portal" asp-route-q="@query" asp-route-status="@status"
+                                   asp-route-siteId="@siteId" asp-route-supplierId="@supplierId"
+                                   asp-route-selected="@o.PoReference" style="font-weight:600;">@o.PoReference</a>
+                            </td>
+                            <td>@o.Site?.SiteName</td>
+                            <td class="muted">@o.Supplier?.Name</td>
+                            <td class="num strong">LKR @o.TotalValue.ToString("N2")</td>
+                            <td><span class="pill @StatusDisplay.PillClass(o.Status)">@StatusDisplay.Label(o.Status)</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (detail is not null)
+        {
+            var o = detail.Order;
+            <div class="card">
+                <div class="card__body">
+                    <div class="row-between gap-12">
+                        <h2 class="mt-0" style="margin-bottom:4px;font-size:21px;font-weight:700;color:var(--ink);">@o.PoReference</h2>
+                        <span class="pill @StatusDisplay.PillClass(o.Status)">@StatusDisplay.Label(o.Status)</span>
+                    </div>
+                    <p class="muted" style="margin:0 0 16px;font-size:13.5px;">
+                        Submitted by @(o.CreatedBy?.Name ?? "—") &middot; @o.DateCreated.ToString("d MMM yyyy")
+                    </p>
+
+                    <div class="card card--info mb-16">
+                        <div class="card__body">
+                            <div class="specs specs--grid">
+                                <div class="specs__row">
+                                    <div class="specs__k">SITE</div>
+                                    <div class="specs__v">@o.Site?.SiteName</div>
+                                </div>
+                                <div class="specs__row">
+                                    <div class="specs__k">SUPPLIER</div>
+                                    <div class="specs__v">@o.Supplier?.Name</div>
+                                </div>
+                                <div class="specs__row">
+                                    <div class="specs__k">DEPOT</div>
+                                    <div class="specs__v">@(o.Depot?.Location ?? "—")</div>
+                                </div>
+                                <div class="specs__row">
+                                    <div class="specs__k">REQUIRED BY</div>
+                                    <div class="specs__v">@o.RequiredByDate.ToString("ddd, d MMM yyyy")</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section-label">Line items</div>
+                    @foreach (var l in o.Lines)
+                    {
+                        <div class="lrow lrow--grey">
+                            <div class="lrow__name">@l.Item.Description</div>
+                            <span class="muted" style="font-size:13px;">@l.QuantityOrdered @l.Item.UnitOfMeasure</span>
+                            <span class="lrow__val">LKR @l.LineTotal.ToString("N2")</span>
+                        </div>
+                    }
+                    <div class="totalrow">
+                        <span class="totalrow__k">Total requisition value</span>
+                        <span class="totalrow__v">LKR @o.TotalValue.ToString("N2")</span>
+                    </div>
+
+                    @if (o.Approvals.Count > 0)
+                    {
+                        <div class="section-label">Approval history</div>
+                        <div class="timeline">
+                            @foreach (var a in o.Approvals.OrderByDescending(x => x.DecisionDate))
+                            {
+                                <div class="timeline__item @(a.Decision == ApprovalDecisionType.Approved ? "timeline__item--green" : "timeline__item--amber")">
+                                    <div class="timeline__t">@a.Decision by @a.ManagerName</div>
+                                    <div class="timeline__m">@a.DecisionDate.ToString("d MMM yyyy, HH:mm")</div>
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    @if (detail.Deliveries.Count > 0)
+                    {
+                        <div class="section-label">Deliveries</div>
+                        @foreach (var d in detail.Deliveries)
+                        {
+                            <div class="lrow">
+                                <div>
+                                    <div class="lrow__name">@d.DeliveryNoteId</div>
+                                    <div class="lrow__sub">@d.DeliveryDate.ToString("d MMM yyyy") &bull; @d.Lines.Count line(s)</div>
+                                </div>
+                                <span class="muted" style="font-size:13px;">@d.ReceivedBy</span>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>

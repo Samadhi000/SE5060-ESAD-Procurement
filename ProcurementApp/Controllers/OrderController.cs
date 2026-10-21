@@ -6,6 +6,7 @@ namespace ProcurementApp.Controllers;
 /// <summary>
 /// Module 1 — Create &amp; Submit a Purchase Order (UC1 / SD1). Uses the Builder pattern
 /// (inside <see cref="IOrderCreationService"/>) to assemble the order step by step.
+/// The three steps mirror the design's wireframes PurchaseOrder-1..3.
 /// </summary>
 public class OrderController : Controller
 {
@@ -16,7 +17,7 @@ public class OrderController : Controller
         _service = service;
     }
 
-    // Step 1 — choose site, supplier and required-by date (wireframe Fig 9, screen 1)
+    // Step 1 — choose site, supplier, optional depot and required-by date (PurchaseOrder-1).
     public IActionResult Create()
     {
         ViewBag.Sites = _service.GetSites();
@@ -24,8 +25,8 @@ public class OrderController : Controller
         return View();
     }
 
-    // Step 2 — add catalogue items for the chosen supplier (wireframe Fig 9, screen 2)
-    public IActionResult AddItems(int siteId, int supplierId, DateTime requiredBy)
+    // Step 2 — add catalogue items for the chosen supplier (PurchaseOrder-2).
+    public IActionResult AddItems(int siteId, int supplierId, int? depotId, DateTime requiredBy)
     {
         var supplier = _service.GetSuppliers().FirstOrDefault(s => s.Id == supplierId);
         var site = _service.GetSites().FirstOrDefault(s => s.Id == siteId);
@@ -33,28 +34,46 @@ public class OrderController : Controller
 
         ViewBag.Site = site;
         ViewBag.Supplier = supplier;
+        ViewBag.DepotId = depotId;
         ViewBag.RequiredBy = requiredBy == default ? DateTime.Now.AddDays(14) : requiredBy;
         return View(_service.GetCatalogue(supplier.SupplierId));
     }
 
-    // Submit — the Builder validates and the order is saved (wireframe Fig 9, screen 3)
+    // Step 3 — review the assembled order before committing (PurchaseOrder-3).
+    // The Builder produces it as an unsaved DRAFT purely so it can be displayed.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Submit(int siteId, int supplierId, DateTime requiredBy,
+    public IActionResult Review(int siteId, int supplierId, int? depotId, DateTime requiredBy,
                                 string[] itemCode, int[] quantity)
     {
-        var lines = new List<OrderLineRequest>();
-        for (var i = 0; i < itemCode.Length; i++)
+        var request = ToDraftRequest(siteId, supplierId, depotId, requiredBy, itemCode, quantity);
+
+        if (request.Lines.Count == 0)
         {
-            var qty = i < quantity.Length ? quantity[i] : 0;
-            if (qty > 0) lines.Add(new OrderLineRequest(itemCode[i], qty));
+            TempData["Error"] = "Add a quantity for at least one item before continuing.";
+            return RedirectToAction(nameof(AddItems), new { siteId, supplierId, depotId, requiredBy });
         }
 
-        var result = _service.Submit(siteId, supplierId, requiredBy, lines);
+        var draft = _service.BuildDraftForReview(request);
+        if (draft is null) return RedirectToAction(nameof(Create));
+
+        ViewBag.Request = request;
+        return View(draft);
+    }
+
+    // Submit — the Builder validates and the order is saved (PurchaseOrder-4 follows).
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult Submit(int siteId, int supplierId, int? depotId, DateTime requiredBy,
+                                string[] itemCode, int[] quantity, string? comments)
+    {
+        var request = ToDraftRequest(siteId, supplierId, depotId, requiredBy, itemCode, quantity);
+
+        var result = _service.Submit(request, comments);
         if (!result.Success)
         {
             TempData["Error"] = result.Message;
-            return RedirectToAction(nameof(AddItems), new { siteId, supplierId, requiredBy });
+            return RedirectToAction(nameof(AddItems), new { siteId, supplierId, depotId, requiredBy });
         }
 
         TempData["Reference"] = result.Reference;
@@ -63,7 +82,24 @@ public class OrderController : Controller
 
     public IActionResult Confirmation()
     {
-        ViewBag.Reference = TempData["Reference"];
+        var reference = TempData["Reference"] as string;
+        if (string.IsNullOrEmpty(reference)) return RedirectToAction(nameof(Create));
+
+        ViewBag.Reference = reference;
         return View();
+    }
+
+    /// <summary>Pairs up the parallel itemCode[] / quantity[] form arrays into line requests.</summary>
+    private static OrderDraftRequest ToDraftRequest(int siteId, int supplierId, int? depotId,
+                                                    DateTime requiredBy, string[] itemCode, int[] quantity)
+    {
+        var lines = new List<OrderLineRequest>();
+        for (var i = 0; i < itemCode.Length; i++)
+        {
+            var qty = i < quantity.Length ? quantity[i] : 0;
+            if (qty > 0) lines.Add(new OrderLineRequest(itemCode[i], qty));
+        }
+
+        return new OrderDraftRequest(siteId, supplierId, depotId, requiredBy, lines);
     }
 }

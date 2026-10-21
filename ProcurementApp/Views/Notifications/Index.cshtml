@@ -1,31 +1,56 @@
 @model IReadOnlyList<NotificationMessage>
+@*  Module 4 — the Observer pattern's in-app inbox, in the portal shell  *@
 @{
+    Layout = "_ConsoleLayout";
     ViewData["Title"] = "Notifications";
+    ViewData["Nav"] = "alerts";
 }
 
-<h2 style="color:#1F3864;">Notifications</h2>
-<p class="text-muted">
-    Produced by the <strong>Observer pattern</strong>: every order event is forwarded by the
-    Notification Hub (subject) to the in-app inbox observer shown here.
-</p>
+<div class="page-head">
+    <div>
+        <h1 class="page-title">Notifications</h1>
+        <p class="page-sub">
+            Produced by the <strong>Observer pattern</strong>: every order event is forwarded by the
+            Notification Hub (the subject) to the in-app inbox observer shown here.
+        </p>
+    </div>
+</div>
 
 @if (Model.Count == 0)
 {
-    <div class="alert alert-info">No notifications yet. Approve an order or record a delivery to generate some.</div>
+    <div class="empty">
+        <span class="empty__icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 6-2.5 7-2.5 7h17S18 14 18 8z"/><path d="M10.3 19a2 2 0 0 0 3.4 0"/></svg>
+        </span>
+        <div class="empty__t">No notifications yet</div>
+        <div class="empty__s">Approve an order or record a delivery and the observers will post here.</div>
+    </div>
 }
 else
 {
-    <ul class="list-group shadow-sm">
-    @foreach (var m in Model)
-    {
-        <li class="list-group-item">
-            <div class="d-flex justify-content-between">
-                <strong>@m.Recipient</strong>
-                <span class="text-muted small">@m.Timestamp.ToString("dd MMM, HH:mm:ss")</span>
-            </div>
-            <div>@m.Text</div>
-            <div class="text-muted small">Order @m.OrderReference</div>
-        </li>
-    }
-    </ul>
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Recipient</th>
+                    <th>Message</th>
+                    <th>Order</th>
+                    <th>Received</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var m in Model)
+                {
+                    <tr>
+                        <td class="strong">@m.Recipient</td>
+                        <td>@m.Text</td>
+                        <td>
+                            <a asp-controller="Enquiry" asp-action="Details" asp-route-id="@m.OrderReference">@m.OrderReference</a>
+                        </td>
+                        <td class="muted">@m.Timestamp.ToString("d MMM yyyy, HH:mm:ss")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 }

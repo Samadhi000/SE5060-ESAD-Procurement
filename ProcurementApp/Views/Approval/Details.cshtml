@@ -1,113 +1,189 @@
 @model PurchaseOrder
+@*  Module 2 — reproduces wireframe requisition-review.png  *@
 @{
+    Layout = "_ConsoleLayout";
     ViewData["Title"] = Model.PoReference;
+    ViewData["Nav"] = "approvals";
+
     var policy = ViewBag.PolicyResult as ApprovalPolicyResult;
+    var manager = ViewBag.CurrentManager as string ?? "Approver";
 }
 
-<div class="mb-2"><a asp-action="Index" class="text-decoration-none">&larr; Approvals</a></div>
+<div class="crumbs">
+    <a asp-action="Index">Approvals</a>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+    <span style="color:var(--brand);">@Model.PoReference</span>
+</div>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="mb-0" style="color:#1F3864;">
-        @Model.PoReference
-        <span class="badge bg-warning text-dark align-middle">@Model.Status</span>
-    </h2>
-    <h4 class="mb-0 fw-bold">Rs.@Model.TotalValue.ToString("N2")</h4>
+<div class="page-head" style="align-items:center;">
+    <div class="row-between gap-16">
+        <h1 class="page-title" style="margin:0;">@Model.PoReference</h1>
+        <span class="pill @StatusDisplay.PillClass(Model.Status)">@StatusDisplay.Label(Model.Status)</span>
+    </div>
+    <div style="border:1px solid var(--line);background:#fff;border-radius:10px;padding:11px 20px;">
+        <span style="font-size:19px;font-weight:700;color:var(--navy);">LKR @Model.TotalValue.ToString("N2")</span>
+    </div>
 </div>
 
 @if (TempData["Message"] != null)
 {
-    <div class="alert alert-success py-2">@TempData["Message"]</div>
+    <div class="alert alert--ok">@TempData["Message"]</div>
 }
 
-<div class="row">
-    <!-- LEFT: order information + lines -->
-    <div class="col-lg-8">
-        <div class="card shadow-sm mb-3">
-            <div class="card-header fw-bold" style="color:#1F3864;">Order Information</div>
-            <div class="card-body">
-                <dl class="row mb-0">
-                    <dt class="col-sm-4">Site Location</dt><dd class="col-sm-8">@Model.Site?.SiteName — @Model.Site?.Address</dd>
-                    <dt class="col-sm-4">Contracted Supplier</dt><dd class="col-sm-8">@Model.Supplier?.Name</dd>
-                    <dt class="col-sm-4">Required Delivery By</dt><dd class="col-sm-8">@Model.RequiredByDate.ToString("dd MMM yyyy")</dd>
-                    <dt class="col-sm-4">Submitted By</dt><dd class="col-sm-8">@Model.CreatedBy?.Name</dd>
-                </dl>
+<div class="split">
+
+    @* ---------------- LEFT: the requisition itself ---------------- *@
+    <div>
+        <div class="card card--info mb-24">
+            <div class="card__body">
+                <h2 class="mt-0" style="margin-bottom:14px;font-size:18px;font-weight:700;color:var(--navy);">Order Information</h2>
+                <div class="specs specs--inline">
+                    <div class="specs__row">
+                        <div class="specs__k">Site Location</div>
+                        <div class="specs__v">@Model.Site?.SiteName — @Model.Site?.Address</div>
+                    </div>
+                    <div class="specs__row">
+                        <div class="specs__k">Contracted Supplier</div>
+                        <div class="specs__v">@Model.Supplier?.Name</div>
+                    </div>
+                    <div class="specs__row">
+                        <div class="specs__k">Dispatch Depot</div>
+                        <div class="specs__v">@(Model.Depot?.Location ?? "Not specified")</div>
+                    </div>
+                    <div class="specs__row">
+                        <div class="specs__k">Required Delivery By</div>
+                        <div class="specs__v">@Model.RequiredByDate.ToString("dd MMM yyyy")</div>
+                    </div>
+                    <div class="specs__row">
+                        <div class="specs__k">Submitted By</div>
+                        <div class="specs__v">@(Model.CreatedBy?.Name ?? "—")</div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="card shadow-sm mb-3">
-            <div class="card-header fw-bold" style="color:#1F3864;">Requisition Line Items</div>
-            <table class="table mb-0">
-                <thead><tr><th>Item</th><th class="text-end">Qty</th><th>Unit</th><th class="text-end">Unit Price</th><th class="text-end">Line Total</th></tr></thead>
-                <tbody>
-                @foreach (var line in Model.Lines)
-                {
+        <div class="table-wrap">
+            <h2 style="margin:0;padding:17px 20px 15px;font-size:17px;font-weight:700;color:var(--ink);">PO Requisition Line Items</h2>
+            <table class="table">
+                <thead>
                     <tr>
-                        <td>@line.Item.Description</td>
-                        <td class="text-end">@line.QuantityOrdered</td>
-                        <td>@line.Item.UnitOfMeasure</td>
-                        <td class="text-end">Rs.@line.UnitPrice.ToString("N2")</td>
-                        <td class="text-end">Rs.@line.LineTotal.ToString("N2")</td>
+                        <th>Item Description</th>
+                        <th class="num">Qty</th>
+                        <th>Unit</th>
+                        <th class="num">Unit Price</th>
+                        <th class="num">Line Total</th>
                     </tr>
-                }
+                </thead>
+                <tbody>
+                    @foreach (var line in Model.Lines)
+                    {
+                        <tr>
+                            <td>@line.Item.Description</td>
+                            <td class="num">@line.QuantityOrdered</td>
+                            <td class="muted">@line.Item.UnitOfMeasure</td>
+                            <td class="num">LKR @line.UnitPrice.ToString("N2")</td>
+                            <td class="num strong">LKR @line.LineTotal.ToString("N2")</td>
+                        </tr>
+                    }
                 </tbody>
-                <tfoot><tr class="fw-bold"><td colspan="4" class="text-end">Subtotal Order Value</td><td class="text-end">Rs.@Model.TotalValue.ToString("N2")</td></tr></tfoot>
+                <tfoot>
+                    <tr>
+                        <td colspan="4">SUBTOTAL ORDER VALUE</td>
+                        <td class="num">LKR @Model.TotalValue.ToString("N2")</td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
     </div>
 
-    <!-- RIGHT: decision workspace -->
-    <div class="col-lg-4">
-        <div class="card shadow-sm mb-3">
-            <div class="card-header fw-bold" style="color:#1F3864;">Decision Workspace</div>
-            <div class="card-body">
-                @if (policy != null)
+    @* ---------------- RIGHT: decision workspace ---------------- *@
+    <div class="card">
+        <div class="card__body">
+            <h2 class="mt-0" style="margin-bottom:18px;font-size:18px;font-weight:700;color:var(--navy);">Decision Workspace</h2>
+
+            <div class="section-label" style="margin-top:0;">Audit history timeline</div>
+            <div class="timeline mb-24">
+                <div class="timeline__item">
+                    <div class="timeline__t">Created by @(Model.CreatedBy?.Name ?? "Site Manager")</div>
+                    <div class="timeline__m">@Model.DateCreated.ToString("dd MMM yyyy · HH:mm")</div>
+                </div>
+                <div class="timeline__item">
+                    <div class="timeline__t">Submitted for approval</div>
+                    <div class="timeline__m">@Model.DateCreated.ToString("dd MMM yyyy · HH:mm")</div>
+                </div>
+
+                @foreach (var a in Model.Approvals.OrderBy(x => x.DecisionDate))
                 {
-                    <div class="alert @(policy.RequiresApproval ? "alert-warning" : "alert-success") py-2 small">
-                        <strong>Policy:</strong> @policy.Reason
+                    var tone = a.Decision == ApprovalDecisionType.Approved ? "timeline__item--green" : "timeline__item--amber";
+                    <div class="timeline__item @tone">
+                        <div class="timeline__t">@a.Decision by @a.ManagerName</div>
+                        <div class="timeline__m">@a.DecisionDate.ToString("dd MMM yyyy · HH:mm")</div>
+                        @if (!string.IsNullOrWhiteSpace(a.Comment))
+                        {
+                            <div class="timeline__note">“@a.Comment”</div>
+                        }
                     </div>
                 }
 
-                <div class="mb-2 small text-muted">Audit trail comment</div>
-                <form asp-action="Approve" method="post">
+                @if (Model.Status == PurchaseOrderStatus.WaitingForApproval)
+                {
+                    <div class="timeline__item timeline__item--amber">
+                        <div class="timeline__t timeline__t--amber">Awaiting @manager review</div>
+                        <div class="timeline__m">Assigned to your queue</div>
+                    </div>
+                }
+            </div>
+
+            @if (policy is not null)
+            {
+                <div class="alert @(policy.RequiresApproval ? "alert--warn" : "alert--ok")">
+                    <strong>Policy:</strong>&nbsp;@policy.Reason
+                </div>
+            }
+
+            @if (Model.Status is PurchaseOrderStatus.WaitingForApproval or PurchaseOrderStatus.Referred)
+            {
+                <div class="field">
+                    <label class="label" for="comment">Audit Trail Comments</label>
+                    <textarea class="textarea" id="comment" name="comment" form="approve-form"
+                              placeholder="Add a note for the audit trail…"></textarea>
+                </div>
+
+                <form id="approve-form" asp-action="Approve" method="post" class="mb-8">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="id" value="@Model.PoReference" />
-                    <textarea name="comment" class="form-control mb-2" rows="2" placeholder="Add a note for the originator..."></textarea>
-                    <button type="submit" class="btn btn-success w-100 mb-2">&#10003; Approve Requisition</button>
+                    <button type="submit" class="btn btn--success btn--block">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg>
+                        Approve Requisition
+                    </button>
                 </form>
-                <form asp-action="Decline" method="post">
+
+                <form asp-action="Decline" method="post" class="mb-8">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="id" value="@Model.PoReference" />
                     <input type="hidden" name="comment" value="Declined by approver" />
-                    <button type="submit" class="btn btn-outline-danger w-100 mb-2">&#10007; Decline Order</button>
+                    <button type="submit" class="btn btn--danger btn--block">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+                        Decline Order
+                    </button>
                 </form>
+
                 <form asp-action="Refer" method="post">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="id" value="@Model.PoReference" />
                     <input type="hidden" name="comment" value="Referred for further review" />
-                    <button type="submit" class="btn btn-outline-secondary w-100">&#8631; Refer to…</button>
+                    <button type="submit" class="btn btn--slate btn--block">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17V9a4 4 0 0 1 4-4h11"/><path d="M15 2l4 3-4 3"/></svg>
+                        Refer to…
+                    </button>
                 </form>
-            </div>
-        </div>
-
-        <div class="card shadow-sm">
-            <div class="card-header fw-bold" style="color:#1F3864;">Approval History</div>
-            <ul class="list-group list-group-flush">
-                @if (Model.Approvals.Count == 0)
-                {
-                    <li class="list-group-item text-muted small">No decisions recorded yet.</li>
-                }
-                else
-                {
-                    @foreach (var a in Model.Approvals.OrderByDescending(a => a.DecisionDate))
-                    {
-                        <li class="list-group-item small">
-                            <strong>@a.Decision</strong> by @a.ManagerName<br />
-                            <span class="text-muted">@a.DecisionDate.ToString("dd MMM yyyy, HH:mm")</span>
-                            @if (!string.IsNullOrWhiteSpace(a.Comment)) { <div class="fst-italic">"@a.Comment"</div> }
-                        </li>
-                    }
-                }
-            </ul>
+            }
+            else
+            {
+                <div class="alert alert--info" style="margin:0;">
+                    This requisition is <strong>@StatusDisplay.Label(Model.Status)</strong> — no further decision is required.
+                </div>
+            }
         </div>
     </div>
 </div>

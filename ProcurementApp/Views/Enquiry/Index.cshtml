@@ -1,59 +1,79 @@
 @model IReadOnlyList<PurchaseOrder>
+@*  Module 4 — reproduces wireframe my-orders-mobile.png  *@
 @{
+    Layout = "_MobileLayout";
     ViewData["Title"] = "My Orders";
+    ViewData["AppTitle"] = "My Orders";
+    ViewData["Tab"] = "orders";
+    ViewData["Back"] = Url.Action("Index", "Home");
+
     var query = ViewBag.Query as string;
     var selected = ViewBag.Status as PurchaseOrderStatus?;
+
+    // The chips the wireframe shows, in its order.
+    var chips = new (string Label, PurchaseOrderStatus? Status)[]
+    {
+        ("All", null),
+        ("Draft", PurchaseOrderStatus.Draft),
+        ("Awaiting Approval", PurchaseOrderStatus.WaitingForApproval),
+        ("Approved", PurchaseOrderStatus.Approved),
+        ("Placed", PurchaseOrderStatus.Placed),
+        ("Partially Delivered", PurchaseOrderStatus.PartiallyDelivered),
+        ("Fully Delivered", PurchaseOrderStatus.FullyDelivered),
+        ("Declined", PurchaseOrderStatus.Declined)
+    };
 }
 
-<h2 style="color:#1F3864;">My Orders</h2>
-<p class="text-muted">Search and view the status, approval history and delivery progress of any order.</p>
-
-<form asp-action="Index" method="get" class="row g-2 mb-3" style="max-width:720px;">
-    <div class="col-sm-6">
-        <input type="text" name="q" value="@query" class="form-control" placeholder="Search PO reference, site or supplier…" />
+<form method="get" asp-action="Index">
+    <input type="hidden" name="status" value="@selected" />
+    <div class="input-icon mb-16">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input class="input" type="search" name="q" value="@query" placeholder="Search PO reference…" />
     </div>
-    <div class="col-sm-4">
-        <select name="status" class="form-select">
-            <option value="">All statuses</option>
-            @foreach (var s in Enum.GetValues<PurchaseOrderStatus>())
-            {
-                if (selected == s)
-                {
-                    <option value="@s" selected>@s</option>
-                }
-                else
-                {
-                    <option value="@s">@s</option>
-                }
-            }
-        </select>
-    </div>
-    <div class="col-sm-2"><button type="submit" class="btn btn-primary w-100">Search</button></div>
 </form>
+
+<div class="chips mb-16">
+    @foreach (var chip in chips)
+    {
+        var active = chip.Status == selected;
+        <a class="chip @(active ? "is-active" : "")"
+           asp-action="Index" asp-route-q="@query" asp-route-status="@chip.Status">@chip.Label</a>
+    }
+</div>
 
 @if (Model.Count == 0)
 {
-    <div class="alert alert-info">No purchase orders match your search.</div>
+    <div class="empty">
+        <span class="empty__icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        </span>
+        <div class="empty__t">No orders found</div>
+        <div class="empty__s">Nothing matches that search or filter.</div>
+    </div>
 }
 else
 {
-    <table class="table table-hover bg-white shadow-sm align-middle">
-        <thead style="background:#1F3864;color:#fff;">
-            <tr><th>PO Reference</th><th>Site</th><th>Supplier</th><th class="text-end">Value</th><th>Status</th><th>Created</th><th></th></tr>
-        </thead>
-        <tbody>
-        @foreach (var o in Model)
+    <div class="olist">
+        @foreach (var o in Model.OrderByDescending(o => o.DateCreated))
         {
-            <tr>
-                <td class="fw-bold">@o.PoReference</td>
-                <td>@o.Site?.SiteName</td>
-                <td>@o.Supplier?.Name</td>
-                <td class="text-end">Rs.@o.TotalValue.ToString("N2")</td>
-                <td><span class="badge bg-secondary">@o.Status</span></td>
-                <td>@o.DateCreated.ToString("dd MMM yyyy")</td>
-                <td class="text-end"><a asp-action="Details" asp-route-id="@o.PoReference" class="btn btn-sm btn-outline-primary">View</a></td>
-            </tr>
+            <a class="ocard" asp-action="Details" asp-route-id="@o.PoReference">
+                <div class="ocard__top">
+                    <span class="ocard__ref">@o.PoReference</span>
+                    <span class="pill @StatusDisplay.PillClass(o.Status)">@StatusDisplay.Label(o.Status)</span>
+                </div>
+                <div class="ocard__meta">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.7 7-11a7 7 0 1 0-14 0c0 5.3 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/></svg>
+                    @o.Site?.SiteName
+                </div>
+                <div class="ocard__meta">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8.5 7V5.5A1.5 1.5 0 0 1 10 4h4a1.5 1.5 0 0 1 1.5 1.5V7"/></svg>
+                    @o.Supplier?.Name
+                </div>
+                <div class="ocard__foot">
+                    <span class="ocard__val">LKR @o.TotalValue.ToString("N2")</span>
+                    <span class="ocard__age">@StatusDisplay.Age(o.DateCreated)</span>
+                </div>
+            </a>
         }
-        </tbody>
-    </table>
+    </div>
 }

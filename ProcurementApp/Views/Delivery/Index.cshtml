@@ -1,37 +1,74 @@
 @model IReadOnlyList<PurchaseOrder>
+@*  Module 3 — orders that can still receive goods (entry point to the delivery wireframes)  *@
 @{
-    ViewData["Title"] = "Outstanding Deliveries";
+    Layout = "_MobileLayout";
+    ViewData["Title"] = "Deliveries";
+    ViewData["AppTitle"] = "Deliveries";
+    ViewData["Tab"] = "deliveries";
+    ViewData["Back"] = Url.Action("Index", "Home");
 }
 
-<h2 style="color:#1F3864;">Outstanding Deliveries</h2>
-<p class="text-muted">Orders that are placed or partly delivered and can still receive goods.</p>
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert--ok">@TempData["Message"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert--err">@TempData["Error"]</div>
+}
 
-@if (TempData["Message"] != null) { <div class="alert alert-success py-2">@TempData["Message"]</div> }
-@if (TempData["Error"] != null) { <div class="alert alert-danger py-2">@TempData["Error"]</div> }
+<p class="muted" style="margin:0 0 18px;font-size:14px;line-height:1.5;">
+    Orders that are placed or partly delivered and can still receive goods on site.
+</p>
 
 @if (Model.Count == 0)
 {
-    <div class="alert alert-info">No orders are currently awaiting delivery. Approve an order first (Approvals), then it appears here.</div>
+    <div class="empty">
+        <span class="empty__icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg>
+        </span>
+        <div class="empty__t">Nothing awaiting delivery</div>
+        <div class="empty__s">Approve an order in the portal and it will appear here for goods receipt.</div>
+    </div>
 }
 else
 {
-    <table class="table table-hover bg-white shadow-sm align-middle">
-        <thead style="background:#1F3864;color:#fff;">
-            <tr><th>PO Reference</th><th>Site</th><th>Supplier</th><th>Status</th><th>Outstanding lines</th><th></th></tr>
-        </thead>
-        <tbody>
+    <div class="olist">
         @foreach (var o in Model)
         {
+            var delivered = o.Lines.Sum(l => l.QuantityDelivered);
+            var ordered = o.Lines.Sum(l => l.QuantityOrdered);
+            var pct = ordered == 0 ? 0 : (int)Math.Round(delivered * 100.0 / ordered);
             var outstanding = o.Lines.Count(l => !l.IsFullyDelivered());
-            <tr>
-                <td class="fw-bold">@o.PoReference</td>
-                <td>@o.Site?.SiteName</td>
-                <td>@o.Supplier?.Name</td>
-                <td><span class="badge bg-info text-dark">@o.Status</span></td>
-                <td>@outstanding of @o.Lines.Count</td>
-                <td class="text-end"><a asp-action="Record" asp-route-id="@o.PoReference" class="btn btn-sm btn-primary">Record Delivery</a></td>
-            </tr>
+
+            <a class="ocard" asp-action="Items" asp-route-id="@o.PoReference">
+                <div class="ocard__top">
+                    <span class="ocard__ref">@o.PoReference</span>
+                    @if (o.Status == PurchaseOrderStatus.PartiallyDelivered)
+                    {
+                        <span class="pill pill--blue">Partially Delivered</span>
+                    }
+                    else
+                    {
+                        <span class="pill pill--green">Placed</span>
+                    }
+                </div>
+                <div class="ocard__meta">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.7 7-11a7 7 0 1 0-14 0c0 5.3 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/></svg>
+                    @o.Site?.SiteName
+                </div>
+                <div class="ocard__meta">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8.5 7V5.5A1.5 1.5 0 0 1 10 4h4a1.5 1.5 0 0 1 1.5 1.5V7"/></svg>
+                    @o.Supplier?.Name
+                </div>
+                <div class="mt-16">
+                    <div class="progress"><div class="progress__bar" style="width:@pct%"></div></div>
+                </div>
+                <div class="ocard__foot">
+                    <span class="ocard__val">LKR @o.TotalValue.ToString("N2")</span>
+                    <span class="ocard__age">@outstanding of @o.Lines.Count lines outstanding</span>
+                </div>
+            </a>
         }
-        </tbody>
-    </table>
+    </div>
 }

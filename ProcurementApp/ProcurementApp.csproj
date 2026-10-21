@@ -4,6 +4,10 @@
     <TargetFramework>net7.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Target stays net7.0 so the solution still opens in Visual Studio 2022 and 2026.
+         LatestMajor lets the app run on a newer installed runtime (e.g. .NET 10) when the
+         .NET 7 runtime is not installed on that machine. -->
+    <RollForward>LatestMajor</RollForward>
   </PropertyGroup>
 
   <ItemGroup>

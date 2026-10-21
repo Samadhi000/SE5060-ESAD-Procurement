@@ -8,7 +8,9 @@ namespace ProcurementApp.Services;
 /// <summary>One delivered line entered on the Record-Delivery form.</summary>
 public record DeliveryLineRequest(int LineNumber, string ItemDescription, int QuantityDelivered, string Condition);
 
-public record DeliveryResult(bool Success, string Message, PurchaseOrderStatus? NewStatus);
+public record DeliveryResult(bool Success, string Message, PurchaseOrderStatus? NewStatus,
+                             string? Reference = null,
+                             IReadOnlyList<DeliveryLineRequest>? Recorded = null);
 
 /// <summary>Business logic for Module 3 — Log Delivery / Goods Receipt (UC3 / SD3).</summary>
 public interface IDeliveryService
@@ -90,6 +92,8 @@ public class DeliveryService : IDeliveryService
             : "Partial delivery recorded — balance still outstanding.";
         _notifications.Notify("Procurement / Accounting Staff", message, order);
 
-        return new DeliveryResult(true, message, newStatus);
+        return new DeliveryResult(true, message, newStatus, reference, note.Lines
+            .Select(l => new DeliveryLineRequest(l.LineNumber, l.ItemDescription, l.QuantityDelivered, l.Condition))
+            .ToList());
     }
 }

@@ -1,0 +1,46 @@
+@*  Module 3 — reproduces wireframe delivery-confirmation.png  *@
+@{
+    Layout = "_MobileLayout";
+    ViewData["Title"] = "Delivery Recorded";
+    ViewData["Plain"] = true;          // full-white screen, no navy header
+
+    var reference = ViewBag.Reference as string;
+    var status = ViewBag.Status as string;
+    var message = ViewBag.Message as string;
+    var summary = ViewBag.Summary as string[] ?? Array.Empty<string>();
+    var fully = status == nameof(PurchaseOrderStatus.FullyDelivered);
+}
+
+<div class="success">
+    <span class="success__icon">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5.5 5.5L20 7"/></svg>
+    </span>
+    <h1 class="success__t">Delivery recorded</h1>
+    <div class="mt-8">
+        <span class="pill @(fully ? "pill--green" : "pill--blue")">
+            @(fully ? "Fully Delivered" : "Partially Delivered")
+        </span>
+    </div>
+</div>
+
+<div class="card card--info mt-24">
+    <div class="card__body">
+        <div class="section-label" style="margin-top:0;">Log summary</div>
+        <ul style="margin:0;padding-left:18px;color:var(--body);font-size:14px;line-height:1.9;">
+            @foreach (var line in summary)
+            {
+                <li>@line</li>
+            }
+        </ul>
+        <div style="border-top:1px solid rgba(30,58,95,.12);margin:14px 0 12px;"></div>
+        <p class="muted" style="margin:0;font-size:13.5px;line-height:1.5;">@message</p>
+    </div>
+</div>
+
+@section Action {
+    <div class="actionbar actionbar--stack">
+        <a asp-action="Index" class="btn btn--primary btn--block">Done</a>
+        <a asp-controller="Enquiry" asp-action="Details" asp-route-id="@reference" asp-route-tab="deliveries"
+           class="btn--link text-center">View Order</a>
+    </div>
+}

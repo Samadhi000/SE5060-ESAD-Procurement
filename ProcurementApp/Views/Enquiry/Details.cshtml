@@ -1,83 +1,193 @@
 @model OrderEnquiryResult
+@*  Module 4 — reproduces wireframe order-detail-mobile.png  *@
 @{
+    Layout = "_MobileLayout";
     var o = Model.Order;
+    var tab = ViewBag.DetailTab as string ?? "details";
+
     ViewData["Title"] = o.PoReference;
+    ViewData["AppTitle"] = o.PoReference;
+    ViewData["Back"] = Url.Action("Index");
+    ViewData["Pill"] = StatusDisplay.Label(o.Status);
+    ViewData["PillClass"] = StatusDisplay.PillClass(o.Status);
 }
 
-<div class="mb-2"><a asp-action="Index" class="text-decoration-none">&larr; My Orders</a></div>
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="mb-0" style="color:#1F3864;">@o.PoReference <span class="badge bg-secondary align-middle">@o.Status</span></h2>
-    <h4 class="mb-0 fw-bold">Rs.@o.TotalValue.ToString("N2")</h4>
+<div class="tabs" style="margin:0 -22px 18px;padding:0 22px;">
+    <a asp-action="Details" asp-route-id="@o.PoReference" asp-route-tab="details"
+       class="@(tab == "details" ? "is-active" : "")">Details</a>
+    <a asp-action="Details" asp-route-id="@o.PoReference" asp-route-tab="approvals"
+       class="@(tab == "approvals" ? "is-active" : "")">Approval History</a>
+    <a asp-action="Details" asp-route-id="@o.PoReference" asp-route-tab="deliveries"
+       class="@(tab == "deliveries" ? "is-active" : "")">Deliveries</a>
 </div>
 
-<div class="row">
-    <div class="col-lg-7">
-        <div class="card shadow-sm mb-3">
-            <div class="card-header fw-bold" style="color:#1F3864;">Order Specifications</div>
-            <div class="card-body">
-                <dl class="row mb-0">
-                    <dt class="col-sm-4">Site</dt><dd class="col-sm-8">@o.Site?.SiteName</dd>
-                    <dt class="col-sm-4">Supplier</dt><dd class="col-sm-8">@o.Supplier?.Name</dd>
-                    <dt class="col-sm-4">Required By</dt><dd class="col-sm-8">@o.RequiredByDate.ToString("dd MMM yyyy")</dd>
-                    <dt class="col-sm-4">Submitted By</dt><dd class="col-sm-8">@o.CreatedBy?.Name</dd>
-                </dl>
+@if (tab == "details")
+{
+    <div class="card card--info mb-16">
+        <div class="card__body">
+            <div class="section-label" style="margin-top:0;">Order specifications</div>
+            <div class="specs">
+                <div class="specs__row">
+                    <div class="specs__k">Site</div>
+                    <div class="specs__v">@o.Site?.SiteName</div>
+                </div>
+                <div class="specs__row">
+                    <div class="specs__k">Supplier</div>
+                    <div class="specs__v">@o.Supplier?.Name</div>
+                </div>
+                @if (o.Depot is not null)
+                {
+                    <div class="specs__row">
+                        <div class="specs__k">Depot</div>
+                        <div class="specs__v">@o.Depot.Location</div>
+                    </div>
+                }
+                <div class="specs__row">
+                    <div class="specs__k">Required By</div>
+                    <div class="specs__v">@o.RequiredByDate.ToString("dddd, d MMM yyyy")</div>
+                </div>
+                <div class="specs__row">
+                    <div class="specs__k">Submitted By</div>
+                    <div class="specs__v">@(o.CreatedBy?.Name ?? "—")</div>
+                </div>
             </div>
         </div>
-
-        <div class="card shadow-sm mb-3">
-            <div class="card-header fw-bold" style="color:#1F3864;">Line Items</div>
-            <table class="table mb-0">
-                <thead><tr><th>Item</th><th class="text-end">Ordered</th><th class="text-end">Delivered</th><th class="text-end">Line Total</th></tr></thead>
-                <tbody>
-                @foreach (var l in o.Lines)
-                {
-                    <tr>
-                        <td>@l.Item.Description</td>
-                        <td class="text-end">@l.QuantityOrdered</td>
-                        <td class="text-end">@l.QuantityDelivered</td>
-                        <td class="text-end">Rs.@l.LineTotal.ToString("N2")</td>
-                    </tr>
-                }
-                </tbody>
-                <tfoot><tr class="fw-bold"><td colspan="3" class="text-end">Subtotal Value</td><td class="text-end">Rs.@o.TotalValue.ToString("N2")</td></tr></tfoot>
-            </table>
-        </div>
     </div>
 
-    <div class="col-lg-5">
-        <div class="card shadow-sm mb-3">
-            <div class="card-header fw-bold" style="color:#1F3864;">Approval History</div>
-            <ul class="list-group list-group-flush">
-                @if (o.Approvals.Count == 0) { <li class="list-group-item text-muted small">No approval decisions yet.</li> }
-                @foreach (var a in o.Approvals.OrderByDescending(a => a.DecisionDate))
-                {
-                    <li class="list-group-item small">
-                        <strong>@a.Decision</strong> by @a.ManagerName<br />
-                        <span class="text-muted">@a.DecisionDate.ToString("dd MMM yyyy, HH:mm")</span>
-                        @if (!string.IsNullOrWhiteSpace(a.Comment)) { <div class="fst-italic">"@a.Comment"</div> }
-                    </li>
-                }
-            </ul>
+    <div class="section-label">Line items</div>
+    @foreach (var l in o.Lines)
+    {
+        var priced = l.UnitPrice > 0m;
+        <div class="lrow lrow--grey">
+            <div>
+                <div class="lrow__name">@l.Item.Description</div>
+                <div class="lrow__sub @(priced ? "" : "lrow__sub--amber")">
+                    @l.QuantityOrdered @l.Item.UnitOfMeasure
+                    @(priced ? $"× LKR {l.UnitPrice:N2}" : "× Price pending")
+                </div>
+            </div>
+            @if (priced)
+            {
+                <span class="lrow__val">LKR @l.LineTotal.ToString("N2")</span>
+            }
+            else
+            {
+                <span class="lrow__val lrow__val--amber">PENDING</span>
+            }
         </div>
+    }
 
-        <div class="card shadow-sm">
-            <div class="card-header fw-bold" style="color:#1F3864;">Delivery History</div>
-            <ul class="list-group list-group-flush">
-                @if (Model.Deliveries.Count == 0) { <li class="list-group-item text-muted small">No deliveries recorded yet.</li> }
-                @foreach (var d in Model.Deliveries)
-                {
-                    <li class="list-group-item small">
-                        <strong>@d.DeliveryNoteId</strong> — @d.DeliveryDate.ToString("dd MMM yyyy")
-                        <span class="text-muted">(ref @d.SupplierReference)</span>
-                        <ul class="mb-0">
-                            @foreach (var dl in d.Lines)
+    <div class="totalrow">
+        <span class="totalrow__k">Subtotal Value</span>
+        <span class="totalrow__v">LKR @o.TotalValue.ToString("N2")</span>
+    </div>
+
+    @if (o.Comments.Count > 0)
+    {
+        <div class="section-label">Notes</div>
+        @foreach (var c in o.Comments)
+        {
+            <div class="timeline__note" style="margin-bottom:10px;">
+                “@c.Text” <span class="muted" style="font-style:normal;">— @c.Author</span>
+            </div>
+        }
+    }
+}
+else if (tab == "approvals")
+{
+    <div class="section-label">Approval history</div>
+
+    @if (o.Approvals.Count == 0)
+    {
+        <p class="muted" style="font-size:14px;">No approval decisions recorded yet.</p>
+    }
+    else
+    {
+        <div class="timeline">
+            @foreach (var a in o.Approvals.OrderByDescending(x => x.DecisionDate))
+            {
+                var tone = a.Decision == ApprovalDecisionType.Approved ? "timeline__item--green"
+                         : a.Decision == ApprovalDecisionType.Declined ? "timeline__item--amber" : "";
+                <div class="timeline__item @tone">
+                    <div class="timeline__t">@a.Decision by @a.ManagerName</div>
+                    <div class="timeline__m">Approver &middot; @a.DecisionDate.ToString("d MMM yyyy, HH:mm")</div>
+                    @if (!string.IsNullOrWhiteSpace(a.Comment))
+                    {
+                        <div class="timeline__note">“@a.Comment”</div>
+                    }
+                </div>
+            }
+            <div class="timeline__item">
+                <div class="timeline__t">Submitted for approval</div>
+                <div class="timeline__m">
+                    @(o.CreatedBy?.Name ?? "Site Manager") &middot; @o.DateCreated.ToString("d MMM yyyy, HH:mm")
+                </div>
+            </div>
+        </div>
+    }
+}
+else
+{
+    <div class="section-label">Delivery history</div>
+
+    @if (Model.Deliveries.Count == 0)
+    {
+        <p class="muted" style="font-size:14px;">No deliveries recorded against this order yet.</p>
+    }
+    else
+    {
+        foreach (var d in Model.Deliveries)
+        {
+            <div class="icard">
+                <div class="icard__top">
+                    <div>
+                        <div class="icard__name">@d.DeliveryNoteId</div>
+                        <div class="icard__meta">
+                            @d.DeliveryDate.ToString("d MMM yyyy")
+                            @if (!string.IsNullOrWhiteSpace(d.SupplierReference))
                             {
-                                <li>@dl.ItemDescription — @dl.QuantityDelivered (@dl.Condition)</li>
+                                <text>&bull; ref @d.SupplierReference</text>
                             }
-                        </ul>
-                    </li>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-16">
+                    @foreach (var dl in d.Lines)
+                    {
+                        <div class="row-between" style="font-size:13.5px;padding:5px 0;">
+                            <span>@dl.ItemDescription</span>
+                            <span class="muted">@dl.QuantityDelivered &bull; @dl.Condition</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+
+    <div class="section-label">Line progress</div>
+    @foreach (var l in o.Lines)
+    {
+        var pct = l.QuantityOrdered == 0 ? 0 : (int)Math.Round(l.QuantityDelivered * 100.0 / l.QuantityOrdered);
+        <div class="icard @(l.IsFullyDelivered() ? "icard--done" : "")">
+            <div class="icard__top">
+                <div>
+                    <div class="icard__name">@l.Item.Description</div>
+                    <div class="icard__meta">Ordered: @l.QuantityOrdered &bull; Delivered: @l.QuantityDelivered</div>
+                </div>
+                @if (l.IsFullyDelivered())
+                {
+                    <div class="icard__right icard__right--green">Delivered</div>
                 }
-            </ul>
+                else
+                {
+                    <div class="icard__right">Outstanding: @(l.QuantityOrdered - l.QuantityDelivered)</div>
+                }
+            </div>
+            <div class="mt-16">
+                <div class="progress">
+                    <div class="progress__bar @(l.IsFullyDelivered() ? "progress__bar--done" : "")" style="width:@pct%"></div>
+                </div>
+            </div>
         </div>
-    </div>
-</div>
+    }
+}

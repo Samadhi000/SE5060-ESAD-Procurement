@@ -89,3 +89,54 @@ ProcurementApp/
 - The database file `procurement.db` is created on first run and ignored by Git. Delete it to reseed.
 - Each team member owns one module's Controller / Service / pattern / Views; the `Domain` and `Data`
   folders are the shared foundation.
+
+---
+
+## UI implementation — matching the ESAD-02 wireframes
+
+All screens are rebuilt to follow the design document's own UI mockups
+(`ESAD-02/UI/*.png`). The design deploys the system as **two clients**, so the app has two shells:
+
+| Shell | Layout file | Used by | Wireframes |
+|---|---|---|---|
+| **Phone app** (Site Manager) | `Views/Shared/_MobileLayout.cshtml` | Modules 1, 3, 4 | PurchaseOrder-1..4, record-delivery, delivery-confirmation, order-detail-deliveries, my-orders-mobile, order-detail-mobile |
+| **Web portal** (Approving Manager) | `Views/Shared/_ConsoleLayout.cshtml` | Module 2 + management | pending-approvals, requisition-review, order-enquiry-desktop |
+
+The phone shell renders a device frame (status bar, navy app header, sticky action bar, bottom
+tab bar); below 480px it drops the frame and fills the screen, so it also works on a real phone.
+Styling lives in `wwwroot/css/sitepro.css` (design tokens sampled from the wireframes) with a
+little progressive enhancement in `wwwroot/js/sitepro.js` (quantity steppers, condition control).
+
+### Screens added to match the design
+
+- **Step 3 "Review & Submit"** (`Views/Order/Review.cshtml`) — the wizard previously jumped
+  from items straight to submission. The Builder now produces the order via `BuildAsDraft()`
+  purely so it can be reviewed, then `BuildForApproval()` on submit.
+- **Delivery confirmation** (`Views/Delivery/Confirmation.cshtml`) — the "Delivery recorded"
+  screen with its log summary.
+- **Per-order outstanding view** (`Views/Delivery/Items.cshtml`) — item progress bars.
+- **Desktop Order Enquiry** (`Views/Enquiry/Portal.cshtml`) — filters, results, detail pane.
+- **Optional Depot** on step 1, which the design shows and the domain already modelled.
+
+### Deliberate deviations from the mockups (for the reflection report)
+
+1. **Branding.** The mockups are internally inconsistent — the phone screens say "SITEPRO",
+   the desktop ones "APEX PROCUREMENT". One name (**SitePro**) is used throughout.
+2. **"Export CSV"** on Pending Approvals is replaced by **"Apply Approval Policy"**, the control
+   that demonstrates Module 2's Strategy pattern. A non-functional export button would be worse.
+3. **"Suppliers"** is omitted from the portal sidebar — supplier maintenance is not one of the
+   four implemented use cases, and a dead nav link would mislead.
+4. **Currency** is shown as `LKR` throughout, as the mockups do (the code previously said `Rs.`).
+5. **Attach delivery note** is a stub — photo capture is out of scope for a walkthrough.
+6. **Typography** uses a system font stack rather than the mockups' licensed font, so the app
+   renders identically offline.
+
+### Defects found and fixed while rebuilding
+
+- `OrderCreationService` never set `CreatedBy`, so every order raised in the app showed a blank
+  **"Submitted By"** on the approval screens. It now records the acting Site Manager.
+- `SequentialReferenceGenerator` restarted its counter on every run, so a restart **reissued a PO
+  reference an existing order already used**. `DbSeeder.ResumeReferenceNumbering` now continues
+  after the highest reference in the database.
+- The mobile layout's bottom-tab key and the enquiry screen's in-page tab key were both
+  `ViewData["Tab"]` and collided; the latter is now `ViewBag.DetailTab`.

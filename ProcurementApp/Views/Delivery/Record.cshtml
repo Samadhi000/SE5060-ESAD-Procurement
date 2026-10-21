@@ -1,55 +1,92 @@
 @model PurchaseOrder
+@*  Module 3 — reproduces wireframe record-delivery.png  *@
 @{
+    Layout = "_MobileLayout";
     ViewData["Title"] = "Record Delivery";
+    ViewData["AppTitle"] = "Record Delivery";
+    ViewData["Ref"] = Model.PoReference;
+    ViewData["Back"] = Url.Action("Items", new { id = Model.PoReference });
 }
 
-<div class="mb-2"><a asp-action="Index" class="text-decoration-none">&larr; Outstanding Deliveries</a></div>
-<h2 style="color:#1F3864;">Record Delivery <small class="text-muted fs-6">@Model.PoReference</small></h2>
-<p class="text-muted">Site: <strong>@Model.Site?.SiteName</strong> | Supplier: <strong>@Model.Supplier?.Name</strong></p>
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert--err">@TempData["Error"]</div>
+}
 
-<form asp-action="Record" method="post">
+<form id="dn-form" method="post" asp-action="Record">
     @Html.AntiForgeryToken()
     <input type="hidden" name="id" value="@Model.PoReference" />
 
-    <div class="row g-3 mb-3" style="max-width:640px;">
-        <div class="col-md-6">
-            <label class="form-label fw-semibold">Supplier delivery reference</label>
-            <input type="text" name="supplierReference" class="form-control" placeholder="e.g. DN-44821" />
-        </div>
-        <div class="col-md-6">
-            <label class="form-label fw-semibold">Delivery date</label>
-            <input type="date" name="deliveryDate" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+    <div class="field">
+        <label class="label" for="supplierReference">Supplier delivery reference</label>
+        <input class="input" type="text" id="supplierReference" name="supplierReference" placeholder="e.g. DN-44821" />
+    </div>
+
+    <div class="field">
+        <label class="label" for="deliveryDate">Delivery date</label>
+        <div class="input-icon">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4M16 3v4"/></svg>
+            <input class="input" type="date" id="deliveryDate" name="deliveryDate" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
         </div>
     </div>
 
-    <table class="table bg-white shadow-sm align-middle">
-        <thead style="background:#1F3864;color:#fff;">
-            <tr><th>Item</th><th class="text-end">Ordered</th><th class="text-end">Already delivered</th><th class="text-end">Outstanding</th><th style="width:130px;">Receiving now</th><th>Condition</th></tr>
-        </thead>
-        <tbody>
-        @foreach (var line in Model.Lines)
-        {
-            var outstanding = line.QuantityOrdered - line.QuantityDelivered;
-            <tr>
-                <td>
-                    @line.Item.Description
-                    <input type="hidden" name="lineNumber" value="@line.LineNumber" />
-                    <input type="hidden" name="itemDescription" value="@line.Item.Description" />
-                </td>
-                <td class="text-end">@line.QuantityOrdered</td>
-                <td class="text-end">@line.QuantityDelivered</td>
-                <td class="text-end fw-semibold">@outstanding</td>
-                <td><input type="number" name="quantityDelivered" value="0" min="0" max="@outstanding" class="form-control form-control-sm" /></td>
-                <td>
-                    <select name="condition" class="form-select form-select-sm">
-                        <option>Good</option><option>Damaged</option><option>Short</option>
-                    </select>
-                </td>
-            </tr>
-        }
-        </tbody>
-    </table>
+    <button type="button" class="btn btn--outline btn--block mb-16" onclick="alert('Attaching a photo of the signed delivery note is out of scope for this walkthrough.');">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.4"/></svg>
+        Attach delivery note
+    </button>
 
-    <button type="submit" class="btn btn-success">Confirm Delivery</button>
-    <p class="text-muted small mt-2">Enter the quantity received for each line (partial deliveries are allowed). The order status updates automatically.</p>
+    <div class="section-label">Items to receive</div>
+
+    @foreach (var line in Model.Lines)
+    {
+        var outstanding = line.QuantityOrdered - line.QuantityDelivered;
+        var name = "cond-" + line.LineNumber;
+
+        <div class="icard">
+            <div class="icard__top">
+                <div class="icard__name">@line.Item.Description</div>
+                <div class="icard__meta">Ordered: @line.QuantityOrdered</div>
+            </div>
+
+            <div class="row-between mt-16">
+                <span class="muted" style="font-size:14px;">Qty received</span>
+                <span class="stepper">
+                    <button type="button" data-step="-1" aria-label="Decrease">&minus;</button>
+                    <input type="number" name="quantityDelivered" value="0" min="0" max="@outstanding"
+                           aria-label="Quantity received for @line.Item.Description" />
+                    <button type="button" data-step="1" aria-label="Increase">+</button>
+                </span>
+            </div>
+
+            @* Each line needs its OWN radio group, so the groups are named per line and the
+               posted condition[] array is kept in step through the hidden field below. *@
+            <div class="segmented mt-16">
+                <input type="radio" id="@(name)-good" name="@name" value="Good" checked />
+                <label for="@(name)-good">Good</label>
+                <input type="radio" id="@(name)-damaged" name="@name" value="Damaged" class="seg-damaged" />
+                <label for="@(name)-damaged">Damaged</label>
+                <input type="radio" id="@(name)-short" name="@name" value="Short" class="seg-short" />
+                <label for="@(name)-short">Short</label>
+            </div>
+
+            <div data-note style="display:none;" class="mt-16">
+                <input class="input" type="text" placeholder="Describe the issue…"
+                       aria-label="Describe the issue" />
+            </div>
+
+            <input type="hidden" name="lineNumber" value="@line.LineNumber" />
+            <input type="hidden" name="itemDescription" value="@line.Item.Description" />
+            <input type="hidden" name="condition" value="Good" data-condition />
+        </div>
+    }
+
+    <p class="muted" style="font-size:13px;line-height:1.5;">
+        Partial deliveries are allowed — enter only what actually arrived. The order status updates itself.
+    </p>
 </form>
+
+@section Action {
+    <div class="actionbar">
+        <button type="submit" form="dn-form" class="btn btn--primary btn--block">Confirm Delivery</button>
+    </div>
+}

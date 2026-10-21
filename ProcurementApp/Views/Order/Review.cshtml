@@ -1,0 +1,114 @@
+@model PurchaseOrder
+@*  Module 1, step 3 — reproduces wireframe PurchaseOrder-3.png  *@
+@{
+    Layout = "_MobileLayout";
+    ViewData["Title"] = "Review & Submit";
+    ViewData["AppTitle"] = "Review & Submit";
+    ViewData["Step"] = "Step 3 of 3";
+
+    var request = (OrderDraftRequest)ViewBag.Request;
+    var editUrl = Url.Action("AddItems", new
+    {
+        siteId = request.SiteId,
+        supplierId = request.SupplierId,
+        depotId = request.DepotId,
+        requiredBy = request.RequiredBy.ToString("yyyy-MM-dd")
+    });
+    ViewData["Back"] = editUrl;
+}
+
+<div class="card card--info mb-16">
+    <div class="card__body">
+        <div class="section-label" style="margin-top:0;">Procurement parameters</div>
+        <div class="specs">
+            <div class="specs__row row-between">
+                <div>
+                    <div class="specs__k">Site</div>
+                    <div class="specs__v">@Model.Site?.SiteName</div>
+                </div>
+                <a href="@Url.Action("Create")">Edit</a>
+            </div>
+            <div class="specs__row row-between">
+                <div>
+                    <div class="specs__k">Supplier</div>
+                    <div class="specs__v">@Model.Supplier?.Name</div>
+                </div>
+                <a href="@Url.Action("Create")">Edit</a>
+            </div>
+            @if (Model.Depot is not null)
+            {
+                <div class="specs__row row-between">
+                    <div>
+                        <div class="specs__k">Depot</div>
+                        <div class="specs__v">@Model.Depot.Location</div>
+                    </div>
+                    <a href="@Url.Action("Create")">Edit</a>
+                </div>
+            }
+            <div class="specs__row row-between">
+                <div>
+                    <div class="specs__k">Required By</div>
+                    <div class="specs__v">@Model.RequiredByDate.ToString("dddd, d MMM yyyy")</div>
+                </div>
+                <a href="@Url.Action("Create")">Edit</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="section-label">Line items review</div>
+<div class="table-wrap mb-16">
+    <table class="table">
+        <thead>
+            <tr><th>Item</th><th class="num">Qty</th><th class="num">Price</th><th class="num">Total</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var line in Model.Lines)
+            {
+                var priced = line.UnitPrice > 0m;
+                <tr>
+                    <td>@line.Item.Description</td>
+                    <td class="num">@line.QuantityOrdered</td>
+                    <td class="num @(priced ? "" : "amber")">
+                        @(priced ? $"LKR {line.UnitPrice:N2}" : "Pending")
+                    </td>
+                    <td class="num strong @(priced ? "" : "amber")">
+                        @(priced ? $"LKR {line.LineTotal:N2}" : "—")
+                    </td>
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3">Total Requisition Value</td>
+                <td class="num" style="color:var(--brand);">LKR @Model.TotalValue.ToString("N2")</td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
+<form id="po-step3" method="post" asp-action="Submit">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="siteId" value="@request.SiteId" />
+    <input type="hidden" name="supplierId" value="@request.SupplierId" />
+    <input type="hidden" name="depotId" value="@request.DepotId" />
+    <input type="hidden" name="requiredBy" value="@request.RequiredBy.ToString("yyyy-MM-dd")" />
+    @foreach (var line in request.Lines)
+    {
+        <input type="hidden" name="itemCode" value="@line.ItemCode" />
+        <input type="hidden" name="quantity" value="@line.Quantity" />
+    }
+
+    <div class="field">
+        <label class="label" for="comments">Comments for Approver</label>
+        <textarea class="textarea" id="comments" name="comments"
+                  placeholder="Add any specific project notes, delivery drop-off directions, or justification for price-pending items here…"></textarea>
+    </div>
+</form>
+
+@section Action {
+    <div class="actionbar actionbar--stack">
+        <button type="submit" form="po-step3" class="btn btn--primary btn--block">Submit for Approval</button>
+        <a href="@editUrl" class="btn btn--white btn--block">Back to Items</a>
+    </div>
+}

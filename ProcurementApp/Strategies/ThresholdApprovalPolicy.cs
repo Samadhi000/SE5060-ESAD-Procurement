@@ -16,15 +16,15 @@ public class ThresholdApprovalPolicy : IApprovalPolicy
         _threshold = threshold;
     }
 
-    public string Name => $"Threshold (auto-approve ≤ Rs.{_threshold:N0})";
+    public string Name => $"Threshold (auto-approve ≤ LKR {_threshold:N0})";
 
     public ApprovalPolicyResult Evaluate(PurchaseOrder order)
     {
         if (order.TotalValue <= _threshold)
             return new ApprovalPolicyResult(false,
-                $"Value Rs.{order.TotalValue:N2} is within the Rs.{_threshold:N0} auto-approval limit.");
+                $"Value LKR {order.TotalValue:N2} is within the LKR {_threshold:N0} auto-approval limit.");
 
         return new ApprovalPolicyResult(true,
-            $"Value Rs.{order.TotalValue:N2} exceeds the Rs.{_threshold:N0} limit — manager approval required.");
+            $"Value LKR {order.TotalValue:N2} exceeds the LKR {_threshold:N0} limit — manager approval required.");
     }
 }

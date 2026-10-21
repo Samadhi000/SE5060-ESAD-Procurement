@@ -55,6 +55,10 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ProcurementDbContext>();
     DbSeeder.Initialise(db);
+
+    // Continue PO numbering after whatever is already stored, so a restart never
+    // reissues a reference that an existing order already uses.
+    DbSeeder.ResumeReferenceNumbering(db, scope.ServiceProvider.GetRequiredService<IReferenceNumberGenerator>());
 }
 
 // Configure the HTTP request pipeline.

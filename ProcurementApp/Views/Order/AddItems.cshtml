@@ -1,55 +1,191 @@
 @model IReadOnlyList<CatalogueItem>
+@*  Module 1, step 2 — reproduces wireframe PurchaseOrder-2.png  *@
 @{
+    Layout = "_MobileLayout";
     ViewData["Title"] = "Add Items";
+    ViewData["AppTitle"] = "Add Items";
+    ViewData["Step"] = "Step 2 of 3";
+
     var site = ViewBag.Site as Site;
     var supplier = ViewBag.Supplier as Supplier;
+    var depotId = ViewBag.DepotId as int?;
     var requiredBy = (DateTime)ViewBag.RequiredBy;
-}
 
-<h2 style="color:#1F3864;">Add Items <small class="text-muted fs-6">Step 2 of 3</small></h2>
-<p class="text-muted">
-    Site: <strong>@site?.SiteName</strong> &nbsp;|&nbsp;
-    Supplier: <strong>@supplier?.Name</strong> &nbsp;|&nbsp;
-    Required by: <strong>@requiredBy.ToString("dd MMM yyyy")</strong>
-</p>
+    ViewData["Back"] = Url.Action("Create");
+}
 
 @if (TempData["Error"] != null)
 {
-    <div class="alert alert-danger py-2">@TempData["Error"]</div>
+    <div class="alert alert--err">@TempData["Error"]</div>
 }
 
-<form asp-action="Submit" method="post">
+<div class="input-icon mb-16">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+    <input class="input" type="search" id="cat-search" placeholder="Search catalogue…" autocomplete="off" />
+</div>
+
+<form id="po-step2" method="post" asp-action="Review">
     @Html.AntiForgeryToken()
     <input type="hidden" name="siteId" value="@site?.Id" />
     <input type="hidden" name="supplierId" value="@supplier?.Id" />
+    <input type="hidden" name="depotId" value="@depotId" />
     <input type="hidden" name="requiredBy" value="@requiredBy.ToString("yyyy-MM-dd")" />
 
-    <table class="table bg-white shadow-sm align-middle">
-        <thead style="background:#1F3864;color:#fff;">
-            <tr><th>Catalogue Item</th><th>Unit</th><th class="text-end">Agreed Price</th><th style="width:140px;">Quantity</th></tr>
-        </thead>
-        <tbody>
-        @foreach (var c in Model)
-        {
-            <tr>
-                <td>
-                    @c.Item.Description
-                    <input type="hidden" name="itemCode" value="@c.Item.ItemCode" />
-                </td>
-                <td>@c.Item.UnitOfMeasure</td>
-                <td class="text-end">Rs.@c.AgreedPrice.ToString("N2")</td>
-                <td><input type="number" name="quantity" value="0" min="0" class="form-control form-control-sm" /></td>
-            </tr>
-        }
-        </tbody>
-    </table>
+    <div class="section-label">Available catalogue</div>
 
     @if (Model.Count == 0)
     {
-        <div class="alert alert-warning">This supplier has no priced catalogue items.</div>
+        <div class="alert alert--warn">This supplier has no catalogue items.</div>
     }
 
-    <button type="submit" class="btn btn-success">Submit for Approval</button>
-    <a asp-action="Create" class="btn btn-link">Cancel</a>
-    <p class="text-muted small mt-2">Enter a quantity for the items you need; leave others at 0.</p>
+    <div id="catalogue">
+        @foreach (var c in Model)
+        {
+            var priced = c.IsPriced();
+            <div class="catrow" data-row data-code="@c.Item.ItemCode"
+                 data-desc="@c.Item.Description" data-unit="@c.Item.UnitOfMeasure"
+                 data-price="@c.AgreedPrice.ToString("0.00")" data-priced="@(priced ? "1" : "0")">
+                <div class="catrow__top">
+                    <div>
+                        <div class="catrow__name">@c.Item.Description</div>
+                        <div class="catrow__unit">Unit: @c.Item.UnitOfMeasure</div>
+                    </div>
+                    @if (priced)
+                    {
+                        <div class="catrow__price">LKR @c.AgreedPrice.ToString("N2")</div>
+                    }
+                    else
+                    {
+                        <span class="pill pill--amber">Price pending</span>
+                    }
+                </div>
+                <div class="catrow__ctl">
+                    <span class="stepper">
+                        <button type="button" data-step="-1" aria-label="Decrease">&minus;</button>
+                        <input type="number" value="0" min="0" data-qty aria-label="Quantity" />
+                        <button type="button" data-step="1" aria-label="Increase">+</button>
+                    </span>
+                    <button type="button" class="btn btn--primary btn--sm" data-add>Add</button>
+                </div>
+
+                @* the values actually posted — kept in step with the order-lines list below *@
+                <input type="hidden" name="itemCode" value="@c.Item.ItemCode" />
+                <input type="hidden" name="quantity" value="0" data-posted />
+            </div>
+        }
+    </div>
+
+    <div class="section-label" id="lines-label">Order lines (0 items)</div>
+    <div id="unpriced-warning" style="display:none;">
+        <div class="alert alert--warn alert--icon">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+            <span id="unpriced-text"></span>
+        </div>
+    </div>
+    <div id="lines"></div>
+    <p class="muted" id="lines-empty" style="font-size:13.5px;">Nothing added yet — set a quantity and tap <strong>Add</strong>.</p>
 </form>
+
+@section Action {
+    <div class="actionbar actionbar--split">
+        <div class="actionbar__total">
+            <div class="k">Subtotal</div>
+            <div class="v" id="subtotal">LKR 0.00</div>
+        </div>
+        <button type="submit" form="po-step2" class="btn btn--primary">
+            Next: Review
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+    </div>
+}
+
+@section Scripts {
+<script>
+(function () {
+    'use strict';
+    var rows = Array.prototype.slice.call(document.querySelectorAll('[data-row]'));
+    var linesBox = document.getElementById('lines');
+    var linesLabel = document.getElementById('lines-label');
+    var linesEmpty = document.getElementById('lines-empty');
+    var subtotalEl = document.getElementById('subtotal');
+    var warnBox = document.getElementById('unpriced-warning');
+    var warnText = document.getElementById('unpriced-text');
+
+    function money(n) {
+        return 'LKR ' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
+    // Re-renders the "ORDER LINES" list from whatever quantities have been committed.
+    function render() {
+        var total = 0, count = 0, unpriced = 0;
+        linesBox.innerHTML = '';
+
+        rows.forEach(function (row) {
+            var qty = parseInt(row.querySelector('[data-posted]').value, 10) || 0;
+            if (qty <= 0) return;
+
+            count++;
+            var price = parseFloat(row.dataset.price) || 0;
+            var isPriced = row.dataset.priced === '1';
+            if (!isPriced) { unpriced++; } else { total += price * qty; }
+
+            var sub = isPriced
+                ? qty + ' ' + row.dataset.unit + ' &times; ' + money(price)
+                : qty + ' ' + row.dataset.unit + ' &times; Price pending';
+            var val = isPriced
+                ? '<span class="lrow__val">' + money(price * qty) + '</span>'
+                : '<span class="lrow__val lrow__val--amber">PENDING</span>';
+
+            var line = document.createElement('div');
+            line.className = 'lrow';
+            line.innerHTML =
+                '<div><div class="lrow__name">' + row.dataset.desc + '</div>' +
+                '<div class="lrow__sub' + (isPriced ? '' : ' lrow__sub--amber') + '">' + sub + '</div></div>' +
+                '<div class="row-between gap-12">' + val +
+                '<button type="button" class="btn--link" data-remove="' + row.dataset.code + '" aria-label="Remove">' +
+                '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>' +
+                '</button></div>';
+            linesBox.appendChild(line);
+        });
+
+        linesLabel.textContent = 'Order lines (' + count + (count === 1 ? ' item)' : ' items)');
+        linesEmpty.style.display = count ? 'none' : 'block';
+        subtotalEl.textContent = money(total);
+        warnBox.style.display = unpriced ? 'block' : 'none';
+        warnText.textContent = unpriced + (unpriced === 1 ? ' item has' : ' items have') + ' no agreed price';
+    }
+
+    // "Add" commits the stepper value into the order lines (and the posted quantity).
+    document.addEventListener('click', function (e) {
+        var add = e.target.closest('[data-add]');
+        if (add) {
+            var row = add.closest('[data-row]');
+            row.querySelector('[data-posted]').value = row.querySelector('[data-qty]').value || 0;
+            render();
+            return;
+        }
+
+        var rm = e.target.closest('[data-remove]');
+        if (rm) {
+            var code = rm.getAttribute('data-remove');
+            rows.forEach(function (row) {
+                if (row.dataset.code !== code) { return; }
+                row.querySelector('[data-posted]').value = 0;
+                row.querySelector('[data-qty]').value = 0;
+            });
+            render();
+        }
+    });
+
+    // Catalogue search box.
+    document.getElementById('cat-search').addEventListener('input', function () {
+        var term = this.value.trim().toLowerCase();
+        rows.forEach(function (row) {
+            row.style.display = row.dataset.desc.toLowerCase().indexOf(term) !== -1 ? '' : 'none';
+        });
+    });
+
+    render();
+})();
+</script>
+}

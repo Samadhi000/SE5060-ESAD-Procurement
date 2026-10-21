@@ -1,52 +1,127 @@
-﻿@{
-    ViewData["Title"] = "Procurement System";
+@*  Dashboard / launcher — the design deploys a phone app AND a web portal, so both start here  *@
+@{
+    Layout = "_ConsoleLayout";
+    ViewData["Title"] = "Dashboard";
+    ViewData["Nav"] = "dashboard";
+
+    var pending = (int)ViewBag.PendingCount;
+    var deliverable = (int)ViewBag.DeliverableCount;
+    var orders = (int)ViewBag.OrderCount;
+    var totalValue = (decimal)ViewBag.TotalValue;
 }
 
-<div class="text-center my-4">
-    <h1 style="color:#1F3864;">SitePro Procurement</h1>
-    <p class="text-muted">Mobile procurement for the construction industry — Case Study 2 implementation.</p>
-</div>
-
-<div class="row g-3">
-    <div class="col-md-6 col-lg-3">
-        <a asp-controller="Order" asp-action="Create" class="text-decoration-none">
-            <div class="card shadow-sm h-100"><div class="card-body text-center">
-                <div style="font-size:2rem;">&#128221;</div>
-                <h5 style="color:#1F3864;">Create Order</h5>
-                <p class="text-muted small mb-0">Raise and submit a purchase order. <br /><em>Builder pattern</em></p>
-            </div></div>
-        </a>
-    </div>
-    <div class="col-md-6 col-lg-3">
-        <a asp-controller="Approval" asp-action="Index" class="text-decoration-none">
-            <div class="card shadow-sm h-100"><div class="card-body text-center">
-                <div style="font-size:2rem;">&#9989;</div>
-                <h5 style="color:#1F3864;">Approvals</h5>
-                <p class="text-muted small mb-0">Approve / decline / refer requisitions. <br /><em>Strategy pattern</em></p>
-            </div></div>
-        </a>
-    </div>
-    <div class="col-md-6 col-lg-3">
-        <a asp-controller="Delivery" asp-action="Index" class="text-decoration-none">
-            <div class="card shadow-sm h-100"><div class="card-body text-center">
-                <div style="font-size:2rem;">&#128230;</div>
-                <h5 style="color:#1F3864;">Deliveries</h5>
-                <p class="text-muted small mb-0">Log goods receipts (incl. partial). <br /><em>State pattern</em></p>
-            </div></div>
-        </a>
-    </div>
-    <div class="col-md-6 col-lg-3">
-        <a asp-controller="Enquiry" asp-action="Index" class="text-decoration-none">
-            <div class="card shadow-sm h-100"><div class="card-body text-center">
-                <div style="font-size:2rem;">&#128269;</div>
-                <h5 style="color:#1F3864;">My Orders</h5>
-                <p class="text-muted small mb-0">Enquire, view history &amp; reports. <br /><em>Observer pattern</em></p>
-            </div></div>
-        </a>
+<div class="page-head">
+    <div>
+        <h1 class="page-title">SitePro Procurement</h1>
+        <p class="page-sub">
+            Procurement for Construction — SE5060 Case Study 2 implementation of the ESAD-02 design.
+        </p>
     </div>
 </div>
 
-<div class="text-center mt-4">
-    <a asp-controller="Enquiry" asp-action="Reports" class="btn btn-outline-primary btn-sm">Management Reports</a>
-    <a asp-controller="Notifications" asp-action="Index" class="btn btn-outline-primary btn-sm">Notifications</a>
+<div class="kpis">
+    <div class="kpi">
+        <div class="kpi__k">In Approval Queue</div>
+        <div class="kpi__v">@pending</div>
+    </div>
+    <div class="kpi">
+        <div class="kpi__k">Awaiting Delivery</div>
+        <div class="kpi__v">@deliverable</div>
+    </div>
+    <div class="kpi">
+        <div class="kpi__k">Total Orders</div>
+        <div class="kpi__v">@orders</div>
+    </div>
+    <div class="kpi">
+        <div class="kpi__k">Total Value</div>
+        <div class="kpi__v">LKR @totalValue.ToString("N2")</div>
+    </div>
+</div>
+
+<div class="split">
+
+    @* ---------------- the phone app ---------------- *@
+    <div class="card">
+        <div class="card__body">
+            <div class="row-between gap-12 mb-16">
+                <div>
+                    <h2 class="mt-0" style="margin-bottom:4px;font-size:19px;font-weight:700;color:var(--navy);">
+                        Site Manager — mobile app
+                    </h2>
+                    <p class="muted mb-0" style="font-size:14px;">
+                        Raise requisitions, receive goods and check order status from the job site.
+                    </p>
+                </div>
+                <span class="pill pill--blue">Phone</span>
+            </div>
+
+            <div class="stack gap-10">
+                <a class="lrow" asp-controller="Order" asp-action="Create">
+                    <div>
+                        <div class="lrow__name">Create &amp; Submit Purchase Order</div>
+                        <div class="lrow__sub">Module 1 &middot; Builder pattern</div>
+                    </div>
+                    <span class="muted">&rarr;</span>
+                </a>
+                <a class="lrow" asp-controller="Delivery" asp-action="Index">
+                    <div>
+                        <div class="lrow__name">Log Delivery <span class="muted">(@deliverable open)</span></div>
+                        <div class="lrow__sub">Module 3 &middot; State pattern</div>
+                    </div>
+                    <span class="muted">&rarr;</span>
+                </a>
+                <a class="lrow" asp-controller="Enquiry" asp-action="Index">
+                    <div>
+                        <div class="lrow__name">My Orders &amp; history</div>
+                        <div class="lrow__sub">Module 4 &middot; Observer pattern</div>
+                    </div>
+                    <span class="muted">&rarr;</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    @* ---------------- the web portal ---------------- *@
+    <div class="card">
+        <div class="card__body">
+            <div class="row-between gap-12 mb-16">
+                <div>
+                    <h2 class="mt-0" style="margin-bottom:4px;font-size:19px;font-weight:700;color:var(--navy);">
+                        Approving Manager — portal
+                    </h2>
+                    <p class="muted mb-0" style="font-size:14px;">Review and resolve requisitions in the office.</p>
+                </div>
+                <span class="pill pill--grey">Desktop</span>
+            </div>
+
+            <div class="stack gap-10">
+                <a class="lrow" asp-controller="Approval" asp-action="Index">
+                    <div>
+                        <div class="lrow__name">Pending Approvals <span class="muted">(@pending)</span></div>
+                        <div class="lrow__sub">Module 2 &middot; Strategy + Factory</div>
+                    </div>
+                    <span class="muted">&rarr;</span>
+                </a>
+                <a class="lrow" asp-controller="Enquiry" asp-action="Portal">
+                    <div>
+                        <div class="lrow__name">Order Enquiry workspace</div>
+                        <div class="lrow__sub">Module 4 &middot; office view</div>
+                    </div>
+                    <span class="muted">&rarr;</span>
+                </a>
+                <a class="lrow" asp-controller="Enquiry" asp-action="Reports">
+                    <div>
+                        <div class="lrow__name">Management Reports</div>
+                        <div class="lrow__sub">Consolidated status summary</div>
+                    </div>
+                    <span class="muted">&rarr;</span>
+                </a>
+            </div>
+
+            <div class="alert alert--info mt-16 mb-0">
+                <strong>Active approval policy:</strong>&nbsp;@ViewBag.PolicyName
+                <span class="muted">— change <code>Approval:Policy</code> in appsettings.json to swap the rule.</span>
+            </div>
+        </div>
+    </div>
 </div>

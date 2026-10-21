@@ -1,0 +1,117 @@
+@*
+    MOBILE SHELL — the Site Manager's phone app.
+    Reproduces the device chrome used throughout the ESAD-02 UI wireframes:
+    status bar, navy app header, scrolling screen, sticky action bar and tab bar.
+
+    A view drives it through ViewData:
+      AppTitle  — the large white title in the navy header
+      Back      — URL for the back chevron (omit to hide it)
+      Step      — "Step 1 of 3" pill on the right of the header
+      Ref       — small PO reference shown top-right
+      Pill      — status pill rendered beside the title
+      Plain     — true for the full-white confirmation screens (no navy header)
+      Tab       — highlights a bottom tab: home | orders | deliveries | profile
+    and two optional sections: Action (sticky bottom bar) and Scripts.
+*@
+@{
+    var appTitle = ViewData["AppTitle"] as string;
+    var back = ViewData["Back"] as string;
+    var step = ViewData["Step"] as string;
+    var poRef = ViewData["Ref"] as string;
+    var plain = ViewData["Plain"] as bool? ?? false;
+    var tab = ViewData["Tab"] as string;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — SitePro</title>
+    <link rel="stylesheet" href="~/css/sitepro.css" asp-append-version="true" />
+</head>
+<body class="on-device">
+    <div class="device">
+
+        @* ---- status bar ---- *@
+        <div class="statusbar @(plain ? "statusbar--light" : "statusbar--navy")">
+            <span>9:41</span>
+            <span class="statusbar__icons">
+                <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="4.5" y="5.5" width="3" height="6.5" rx="1"/><rect x="9" y="3" width="3" height="9" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg>
+                <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1 4.2a10 10 0 0 1 14 0"/><path d="M3.5 6.9a6.5 6.5 0 0 1 9 0"/><path d="M6 9.6a3 3 0 0 1 4 0"/></svg>
+                <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".6" y=".6" width="21" height="10.8" rx="3" stroke="currentColor" stroke-width="1.2" opacity=".5"/><rect x="2.2" y="2.2" width="17.8" height="7.6" rx="1.8" fill="currentColor"/><path d="M23 4.2v3.6a2 2 0 0 0 0-3.6z" fill="currentColor" opacity=".5"/></svg>
+            </span>
+        </div>
+
+        @* ---- navy app header ---- *@
+        @if (!plain)
+        {
+            <header class="appbar">
+                <div class="appbar__top">
+                    @if (!string.IsNullOrEmpty(back))
+                    {
+                        <a href="@back" class="appbar__back" aria-label="Back">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                        </a>
+                    }
+                    <span class="appbar__eyebrow">SitePro</span>
+                    <span class="appbar__spacer"></span>
+                    @if (!string.IsNullOrEmpty(poRef))
+                    {
+                        <span class="appbar__ref">@poRef</span>
+                    }
+                </div>
+                <div class="appbar__titlerow">
+                    <h1 class="appbar__title">@appTitle</h1>
+                    @if (!string.IsNullOrEmpty(step))
+                    {
+                        <span class="step-pill">@step</span>
+                    }
+                    @if (ViewData["Pill"] is string pillText && !string.IsNullOrEmpty(pillText))
+                    {
+                        <span class="pill @(ViewData["PillClass"] as string ?? "pill--amber")">@pillText</span>
+                    }
+                </div>
+            </header>
+        }
+
+        @* ---- scrolling screen ---- *@
+        <main class="screen @(plain ? "screen--plain" : "")">
+            @RenderBody()
+        </main>
+
+        @* ---- sticky bottom action bar ---- *@
+        @if (IsSectionDefined("Action"))
+        {
+            @await RenderSectionAsync("Action")
+        }
+
+        @* ---- bottom tab bar ---- *@
+        @if (!string.IsNullOrEmpty(tab))
+        {
+            <nav class="tabbar">
+                <a href="@Url.Action("Index", "Home")" class="@(tab == "home" ? "is-active" : "")">
+                    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+                    Home
+                </a>
+                <a href="@Url.Action("Index", "Enquiry")" class="@(tab == "orders" ? "is-active" : "")">
+                    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16l-1.5 11.5a2 2 0 0 1-2 1.5H7.5a2 2 0 0 1-2-1.5z"/><path d="M8.5 7V5.5a3.5 3.5 0 0 1 7 0V7"/></svg>
+                    Orders
+                </a>
+                <a href="@Url.Action("Index", "Delivery")" class="@(tab == "deliveries" ? "is-active" : "")">
+                    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M1 6h12v10H1z"/><path d="M13 9h4.5l3.5 3.5V16h-8z"/><circle cx="5.5" cy="18.5" r="1.8"/><circle cx="17.5" cy="18.5" r="1.8"/></svg>
+                    Deliveries
+                </a>
+                <a href="@Url.Action("Index", "Notifications")" class="@(tab == "profile" ? "is-active" : "")">
+                    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 6-2.5 7-2.5 7h17S18 14 18 8z"/><path d="M10.3 19a2 2 0 0 0 3.4 0"/></svg>
+                    Alerts
+                </a>
+            </nav>
+        }
+
+        <div class="home-indicator"><span></span></div>
+    </div>
+
+    <script src="~/js/sitepro.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

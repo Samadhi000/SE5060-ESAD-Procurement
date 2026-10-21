@@ -23,6 +23,11 @@ public class EfReferenceDataRepository : IReferenceDataRepository
     public Supplier? GetSupplier(int id) =>
         _db.Suppliers.Include(s => s.Depots).FirstOrDefault(s => s.Id == id);
 
+    public Depot? GetDepot(int id) => _db.Set<Depot>().FirstOrDefault(d => d.Id == id);
+
+    public SiteManager? GetActingSiteManager() =>
+        _db.Employees.OfType<SiteManager>().OrderBy(e => e.Id).FirstOrDefault();
+
     public IReadOnlyList<CatalogueItem> GetCatalogueForSupplier(string supplierBusinessId) =>
         _db.CatalogueItems.Include(c => c.Item)
             .Where(c => c.SupplierId == supplierBusinessId)

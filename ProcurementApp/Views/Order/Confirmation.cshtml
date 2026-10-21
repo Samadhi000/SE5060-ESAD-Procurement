@@ -1,21 +1,32 @@
+@*  Module 1, confirmation — reproduces wireframe PurchaseOrder-4.png  *@
 @{
+    Layout = "_MobileLayout";
     ViewData["Title"] = "Requisition Submitted";
+    ViewData["Plain"] = true;          // full-white screen, no navy header
+
     var reference = ViewBag.Reference as string;
 }
 
-<div class="card shadow-sm mx-auto" style="max-width:480px;">
-    <div class="card-body text-center py-5">
-        <div class="text-success" style="font-size:3rem;">&#10003;</div>
-        <h3 class="mt-2">Requisition sent for approval</h3>
-        <p class="text-muted">Your purchase requisition has been submitted to the designated approvers.</p>
+<div class="success">
+    <span class="success__icon">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5.5 5.5L20 7"/></svg>
+    </span>
+    <h1 class="success__t">Requisition sent for approval</h1>
+    <p class="success__s">Your purchase requisition has been submitted to the designated project approvers.</p>
+</div>
 
-        <div class="bg-light rounded p-3 my-3">
-            <div class="text-muted small">REQUISITION REFERENCE</div>
-            <div class="fs-4 fw-bold" style="color:#1F3864;">@reference</div>
-            <span class="badge bg-warning text-dark">Waiting for Approval</span>
-        </div>
-
-        <a asp-controller="Enquiry" asp-action="Index" class="btn btn-primary">View My Orders</a>
-        <a asp-controller="Order" asp-action="Create" class="btn btn-outline-secondary">New Order</a>
+<div class="card card--info mt-24">
+    <div class="card__body text-center">
+        <div class="section-label" style="margin:0 0 6px;">Requisition reference</div>
+        <div style="font-size:24px;font-weight:700;color:var(--navy);letter-spacing:-.01em;">@reference</div>
+        <div style="border-top:1px solid rgba(30,58,95,.12);margin:14px 0 12px;"></div>
+        <span class="pill pill--amber pill--dot">Waiting for Approval</span>
     </div>
 </div>
+
+@section Action {
+    <div class="actionbar actionbar--stack">
+        <a asp-controller="Enquiry" asp-action="Details" asp-route-id="@reference" class="btn btn--primary btn--block">View Order</a>
+        <a asp-controller="Home" asp-action="Index" class="btn--link text-center">Back to Home</a>
+    </div>
+}

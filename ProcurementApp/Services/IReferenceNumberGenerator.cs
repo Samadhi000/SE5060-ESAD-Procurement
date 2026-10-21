@@ -8,13 +8,30 @@ namespace ProcurementApp.Services;
 public interface IReferenceNumberGenerator
 {
     string NextPurchaseOrderReference();
+
+    /// <summary>
+    /// Continues numbering after the highest reference already in the database. Called once at
+    /// startup: without it the in-memory counter restarts on every run and would hand out a
+    /// reference that an existing order already uses.
+    /// </summary>
+    void ContinueAfter(int lastUsedNumber);
 }
 
-/// <summary>Thread-safe in-memory sequential generator (Singleton via DI).</summary>
+/// <summary>Thread-safe sequential generator (Singleton via DI).</summary>
 public class SequentialReferenceGenerator : IReferenceNumberGenerator
 {
+    private const int FirstReference = 4817;   // matches the seeded sample references
+
     private readonly object _lock = new();
-    private int _counter = 4817;   // continues after the seeded sample references
+    private int _counter = FirstReference;
+
+    public void ContinueAfter(int lastUsedNumber)
+    {
+        lock (_lock)
+        {
+            if (lastUsedNumber > _counter) _counter = lastUsedNumber;
+        }
+    }
 
     public string NextPurchaseOrderReference()
     {

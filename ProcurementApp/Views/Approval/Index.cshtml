@@ -1,76 +1,120 @@
 @model IReadOnlyList<PurchaseOrder>
+@*  Module 2 — reproduces wireframe pending-approvals.png  *@
 @{
+    Layout = "_ConsoleLayout";
     ViewData["Title"] = "Pending Approvals";
+    ViewData["Nav"] = "approvals";
+
+    var filter = ViewBag.Filter as string ?? "all";
+    var counts = ViewBag.Counts as Dictionary<string, int> ?? new Dictionary<string, int>();
+    var overdue = ViewBag.OverdueRefs as HashSet<string> ?? new HashSet<string>();
     var policyFor = ViewBag.PolicyFor as Dictionary<string, ApprovalPolicyResult>
                     ?? new Dictionary<string, ApprovalPolicyResult>();
+
+    var tabs = new (string Key, string Label)[]
+    {
+        ("all", "All"), ("waiting", "Waiting for Approval"), ("referred", "Referred to me"), ("overdue", "Overdue")
+    };
 }
 
-<div class="d-flex justify-content-between align-items-start mb-3">
+<div class="page-head">
     <div>
-        <h2 class="mb-1" style="color:#1F3864;">Pending Approvals</h2>
-        <div class="text-muted">Review and resolve requisition approvals for active construction sites</div>
+        <h1 class="page-title">Pending Approvals</h1>
+        <p class="page-sub">Review and resolve requisition approvals for active construction sites</p>
     </div>
+    @* The design shows an "Export CSV" action here. This build uses the slot for the control
+       that demonstrates Module 2's Strategy pattern instead. *@
     <form asp-action="ApplyPolicy" method="post">
         @Html.AntiForgeryToken()
-        <button type="submit" class="btn btn-outline-primary">
+        <button type="submit" class="btn btn--white">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7.5 10.5 12 15l4.5-4.5"/><path d="M4 19h16"/></svg>
             Apply Approval Policy
         </button>
     </form>
 </div>
 
-<div class="alert alert-info py-2">
-    <strong>Active approval policy (Strategy):</strong> @ViewBag.PolicyName
-    <span class="text-muted"> — "Apply Approval Policy" auto-approves every order the policy does not flag.</span>
-</div>
-
 @if (TempData["Message"] != null)
 {
-    <div class="alert alert-success py-2">@TempData["Message"]</div>
+    <div class="alert alert--ok">@TempData["Message"]</div>
 }
+
+<div class="alert alert--info">
+    <strong>Active approval policy (Strategy):</strong>&nbsp;@ViewBag.PolicyName
+    <span class="muted">— “Apply Approval Policy” auto-approves every order the policy does not flag.</span>
+</div>
+
+<div class="chips mb-24">
+    @foreach (var t in tabs)
+    {
+        <a class="chip @(filter == t.Key ? "is-active" : "")" asp-action="Index" asp-route-filter="@t.Key">
+            @t.Label
+            <span class="chip__count">@(counts.TryGetValue(t.Key, out var n) ? n : 0)</span>
+        </a>
+    }
+</div>
 
 @if (Model.Count == 0)
 {
-    <div class="card"><div class="card-body text-center text-success py-5">
-        <div style="font-size:2rem;">&#10003;</div>
-        <strong>You're all caught up</strong>
-        <div class="text-muted">There are no requisitions waiting for approval.</div>
-    </div></div>
+    <div class="empty">
+        <span class="empty__icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg>
+        </span>
+        <div class="empty__t">You're all caught up</div>
+        <div class="empty__s">There are no pending approvals matching this filter criteria at the moment.</div>
+    </div>
 }
 else
 {
-    <table class="table table-hover align-middle bg-white shadow-sm">
-        <thead style="background:#1F3864; color:#fff;">
-            <tr>
-                <th>PO Reference</th><th>Site</th><th>Supplier</th>
-                <th class="text-end">Total Value</th><th>Submitted By</th>
-                <th>Policy says</th><th></th>
-            </tr>
-        </thead>
-        <tbody>
-        @foreach (var o in Model)
-        {
-            var needs = policyFor.TryGetValue(o.PoReference, out var r) && r.RequiresApproval;
-            <tr>
-                <td><a asp-action="Details" asp-route-id="@o.PoReference" class="fw-bold text-decoration-none">@o.PoReference</a></td>
-                <td>@o.Site?.SiteName</td>
-                <td>@o.Supplier?.Name</td>
-                <td class="text-end fw-bold">Rs.@o.TotalValue.ToString("N2")</td>
-                <td>@o.CreatedBy?.Name</td>
-                <td>
-                    @if (needs)
-                    {
-                        <span class="badge bg-warning text-dark">Needs approval</span>
-                    }
-                    else
-                    {
-                        <span class="badge bg-success">Auto-approvable</span>
-                    }
-                </td>
-                <td class="text-end">
-                    <a asp-action="Details" asp-route-id="@o.PoReference" class="btn btn-sm btn-primary">Review</a>
-                </td>
-            </tr>
-        }
-        </tbody>
-    </table>
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>PO Reference</th>
+                    <th>Site</th>
+                    <th>Supplier</th>
+                    <th class="num">Total Value</th>
+                    <th>Submitted By</th>
+                    <th>Date Submitted</th>
+                    <th>Policy Says</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var o in Model)
+                {
+                    var needs = policyFor.TryGetValue(o.PoReference, out var r) && r.RequiresApproval;
+                    <tr>
+                        <td>
+                            <a asp-action="Details" asp-route-id="@o.PoReference" style="font-weight:600;">@o.PoReference</a>
+                        </td>
+                        <td>@o.Site?.SiteName</td>
+                        <td class="muted">@o.Supplier?.Name</td>
+                        <td class="num strong">LKR @o.TotalValue.ToString("N2")</td>
+                        <td>@(o.CreatedBy?.Name ?? "—")</td>
+                        <td class="muted">@o.DateCreated.ToString("d MMM yyyy")</td>
+                        <td>
+                            @if (needs)
+                            {
+                                <span class="pill pill--amber">Needs approval</span>
+                            }
+                            else
+                            {
+                                <span class="pill pill--green">Auto-approvable</span>
+                            }
+                        </td>
+                        <td>
+                            @if (overdue.Contains(o.PoReference))
+                            {
+                                <span class="pill pill--red">Overdue</span>
+                            }
+                            else
+                            {
+                                <span class="pill @StatusDisplay.PillClass(o.Status)">@StatusDisplay.Label(o.Status)</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 }

@@ -1,41 +1,67 @@
 @model IReadOnlyList<StatusSummaryRow>
+@*  Module 4 — management reporting, in the portal shell  *@
 @{
-    ViewData["Title"] = "Procurement Reports";
+    Layout = "_ConsoleLayout";
+    ViewData["Title"] = "Reports";
+    ViewData["Nav"] = "reports";
+
     var total = (decimal)ViewBag.Total;
+    var orders = Model.Sum(r => r.Count);
+    var maxCount = Model.Count == 0 ? 1 : Model.Max(r => r.Count);
 }
 
-<h2 style="color:#1F3864;">Procurement Management Reports</h2>
-<p class="text-muted">Consolidated view of all purchase orders by status (for Management).</p>
-
-<div class="row g-3 mb-4">
-    <div class="col-md-4">
-        <div class="card shadow-sm text-center"><div class="card-body">
-            <div class="text-muted small">TOTAL ORDERS</div>
-            <div class="fs-3 fw-bold" style="color:#1F3864;">@Model.Sum(r => r.Count)</div>
-        </div></div>
-    </div>
-    <div class="col-md-4">
-        <div class="card shadow-sm text-center"><div class="card-body">
-            <div class="text-muted small">TOTAL VALUE</div>
-            <div class="fs-3 fw-bold" style="color:#1F3864;">Rs.@total.ToString("N2")</div>
-        </div></div>
-    </div>
-    <div class="col-md-4">
-        <div class="card shadow-sm text-center"><div class="card-body">
-            <div class="text-muted small">STATUSES IN USE</div>
-            <div class="fs-3 fw-bold" style="color:#1F3864;">@Model.Count</div>
-        </div></div>
+<div class="page-head">
+    <div>
+        <h1 class="page-title">Procurement Reports</h1>
+        <p class="page-sub">Consolidated view of all purchase orders by status, for Management</p>
     </div>
 </div>
 
-<table class="table bg-white shadow-sm">
-    <thead style="background:#1F3864;color:#fff;">
-        <tr><th>Status</th><th class="text-end">Order Count</th><th class="text-end">Total Value</th></tr>
-    </thead>
-    <tbody>
-    @foreach (var r in Model)
-    {
-        <tr><td>@r.Status</td><td class="text-end">@r.Count</td><td class="text-end">Rs.@r.Value.ToString("N2")</td></tr>
-    }
-    </tbody>
-</table>
+<div class="kpis">
+    <div class="kpi">
+        <div class="kpi__k">Total Orders</div>
+        <div class="kpi__v">@orders</div>
+    </div>
+    <div class="kpi">
+        <div class="kpi__k">Total Value</div>
+        <div class="kpi__v">LKR @total.ToString("N2")</div>
+    </div>
+    <div class="kpi">
+        <div class="kpi__k">Statuses in Use</div>
+        <div class="kpi__v">@Model.Count</div>
+    </div>
+</div>
+
+<div class="table-wrap">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th style="width:40%;">Distribution</th>
+                <th class="num">Order Count</th>
+                <th class="num">Total Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in Model.OrderByDescending(r => r.Count))
+            {
+                var pct = (int)Math.Round(r.Count * 100.0 / maxCount);
+                <tr>
+                    <td><span class="pill @StatusDisplay.PillClass(r.Status)">@StatusDisplay.Label(r.Status)</span></td>
+                    <td>
+                        <div class="progress"><div class="progress__bar" style="width:@pct%"></div></div>
+                    </td>
+                    <td class="num strong">@r.Count</td>
+                    <td class="num">LKR @r.Value.ToString("N2")</td>
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="2">TOTAL</td>
+                <td class="num">@orders</td>
+                <td class="num">LKR @total.ToString("N2")</td>
+            </tr>
+        </tfoot>
+    </table>
+</div>

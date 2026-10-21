@@ -1,0 +1,75 @@
+@model PurchaseOrder
+@*  Module 3 — reproduces wireframe order-detail-deliveries.png  *@
+@{
+    Layout = "_MobileLayout";
+    ViewData["Title"] = "Outstanding Deliveries";
+    ViewData["AppTitle"] = "Outstanding Deliveries";
+    ViewData["Ref"] = Model.PoReference;
+    ViewData["Back"] = Url.Action("Index");
+    ViewData["Pill"] = Model.Status == PurchaseOrderStatus.PartiallyDelivered ? "Partially Delivered" : "Placed";
+    ViewData["PillClass"] = Model.Status == PurchaseOrderStatus.PartiallyDelivered ? "pill--amber" : "pill--green";
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert--err">@TempData["Error"]</div>
+}
+
+<div class="card card--info mb-16">
+    <div class="card__body">
+        <div class="specs specs--cols">
+            <div class="specs__row">
+                <div class="specs__k">Site</div>
+                <div class="specs__v">@Model.Site?.SiteName</div>
+            </div>
+            <div class="specs__row">
+                <div class="specs__k">Supplier</div>
+                <div class="specs__v">@Model.Supplier?.Name</div>
+            </div>
+            <div class="specs__row">
+                <div class="specs__k">Required By</div>
+                <div class="specs__v">@Model.RequiredByDate.ToString("d MMM yyyy")</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="section-label">Items status</div>
+
+@foreach (var line in Model.Lines)
+{
+    var outstanding = line.QuantityOrdered - line.QuantityDelivered;
+    var done = line.IsFullyDelivered();
+    var pct = line.QuantityOrdered == 0 ? 0 : (int)Math.Round(line.QuantityDelivered * 100.0 / line.QuantityOrdered);
+
+    <div class="icard @(done ? "icard--done" : "")">
+        <div class="icard__top">
+            <div>
+                <div class="icard__name">@line.Item.Description</div>
+                <div class="icard__meta">Ordered: @line.QuantityOrdered &bull; Delivered: @line.QuantityDelivered</div>
+            </div>
+            @if (done)
+            {
+                <div class="icard__right icard__right--green">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M4 12.5l5.5 5.5L20 7"/></svg>
+                    Delivered
+                </div>
+            }
+            else
+            {
+                <div class="icard__right">Outstanding: @outstanding</div>
+            }
+        </div>
+        <div class="mt-16">
+            <div class="progress">
+                <div class="progress__bar @(done ? "progress__bar--done" : "")" style="width:@pct%"></div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Action {
+    <div class="actionbar">
+        <a asp-action="Record" asp-route-id="@Model.PoReference" class="btn btn--primary btn--block">Record Delivery</a>
+    </div>
+}

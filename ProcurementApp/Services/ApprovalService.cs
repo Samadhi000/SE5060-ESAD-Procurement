@@ -16,6 +16,9 @@ public interface IApprovalService
 {
     string PolicyName { get; }
     IReadOnlyList<PurchaseOrder> GetPending();
+
+    /// <summary>Everything in the approver queue: awaiting a decision, plus referred on.</summary>
+    IReadOnlyList<PurchaseOrder> GetQueue();
     PurchaseOrder? Get(string reference);
     ApprovalPolicyResult EvaluatePolicy(PurchaseOrder order);
 
@@ -47,6 +50,12 @@ public class ApprovalService : IApprovalService
 
     public IReadOnlyList<PurchaseOrder> GetPending() =>
         _orders.GetByStatus(PurchaseOrderStatus.WaitingForApproval);
+
+    public IReadOnlyList<PurchaseOrder> GetQueue() =>
+        _orders.GetByStatus(PurchaseOrderStatus.WaitingForApproval)
+            .Concat(_orders.GetByStatus(PurchaseOrderStatus.Referred))
+            .OrderByDescending(o => o.DateCreated)
+            .ToList();
 
     public PurchaseOrder? Get(string reference) => _orders.GetByReference(reference);
 
