@@ -1,0 +1,83 @@
+@model OrderEnquiryResult
+@{
+    var o = Model.Order;
+    ViewData["Title"] = o.PoReference;
+}
+
+<div class="mb-2"><a asp-action="Index" class="text-decoration-none">&larr; My Orders</a></div>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0" style="color:#1F3864;">@o.PoReference <span class="badge bg-secondary align-middle">@o.Status</span></h2>
+    <h4 class="mb-0 fw-bold">Rs.@o.TotalValue.ToString("N2")</h4>
+</div>
+
+<div class="row">
+    <div class="col-lg-7">
+        <div class="card shadow-sm mb-3">
+            <div class="card-header fw-bold" style="color:#1F3864;">Order Specifications</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Site</dt><dd class="col-sm-8">@o.Site?.SiteName</dd>
+                    <dt class="col-sm-4">Supplier</dt><dd class="col-sm-8">@o.Supplier?.Name</dd>
+                    <dt class="col-sm-4">Required By</dt><dd class="col-sm-8">@o.RequiredByDate.ToString("dd MMM yyyy")</dd>
+                    <dt class="col-sm-4">Submitted By</dt><dd class="col-sm-8">@o.CreatedBy?.Name</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-3">
+            <div class="card-header fw-bold" style="color:#1F3864;">Line Items</div>
+            <table class="table mb-0">
+                <thead><tr><th>Item</th><th class="text-end">Ordered</th><th class="text-end">Delivered</th><th class="text-end">Line Total</th></tr></thead>
+                <tbody>
+                @foreach (var l in o.Lines)
+                {
+                    <tr>
+                        <td>@l.Item.Description</td>
+                        <td class="text-end">@l.QuantityOrdered</td>
+                        <td class="text-end">@l.QuantityDelivered</td>
+                        <td class="text-end">Rs.@l.LineTotal.ToString("N2")</td>
+                    </tr>
+                }
+                </tbody>
+                <tfoot><tr class="fw-bold"><td colspan="3" class="text-end">Subtotal Value</td><td class="text-end">Rs.@o.TotalValue.ToString("N2")</td></tr></tfoot>
+            </table>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card shadow-sm mb-3">
+            <div class="card-header fw-bold" style="color:#1F3864;">Approval History</div>
+            <ul class="list-group list-group-flush">
+                @if (o.Approvals.Count == 0) { <li class="list-group-item text-muted small">No approval decisions yet.</li> }
+                @foreach (var a in o.Approvals.OrderByDescending(a => a.DecisionDate))
+                {
+                    <li class="list-group-item small">
+                        <strong>@a.Decision</strong> by @a.ManagerName<br />
+                        <span class="text-muted">@a.DecisionDate.ToString("dd MMM yyyy, HH:mm")</span>
+                        @if (!string.IsNullOrWhiteSpace(a.Comment)) { <div class="fst-italic">"@a.Comment"</div> }
+                    </li>
+                }
+            </ul>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header fw-bold" style="color:#1F3864;">Delivery History</div>
+            <ul class="list-group list-group-flush">
+                @if (Model.Deliveries.Count == 0) { <li class="list-group-item text-muted small">No deliveries recorded yet.</li> }
+                @foreach (var d in Model.Deliveries)
+                {
+                    <li class="list-group-item small">
+                        <strong>@d.DeliveryNoteId</strong> — @d.DeliveryDate.ToString("dd MMM yyyy")
+                        <span class="text-muted">(ref @d.SupplierReference)</span>
+                        <ul class="mb-0">
+                            @foreach (var dl in d.Lines)
+                            {
+                                <li>@dl.ItemDescription — @dl.QuantityDelivered (@dl.Condition)</li>
+                            }
+                        </ul>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+</div>

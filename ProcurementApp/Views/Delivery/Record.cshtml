@@ -1,0 +1,55 @@
+@model PurchaseOrder
+@{
+    ViewData["Title"] = "Record Delivery";
+}
+
+<div class="mb-2"><a asp-action="Index" class="text-decoration-none">&larr; Outstanding Deliveries</a></div>
+<h2 style="color:#1F3864;">Record Delivery <small class="text-muted fs-6">@Model.PoReference</small></h2>
+<p class="text-muted">Site: <strong>@Model.Site?.SiteName</strong> | Supplier: <strong>@Model.Supplier?.Name</strong></p>
+
+<form asp-action="Record" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="id" value="@Model.PoReference" />
+
+    <div class="row g-3 mb-3" style="max-width:640px;">
+        <div class="col-md-6">
+            <label class="form-label fw-semibold">Supplier delivery reference</label>
+            <input type="text" name="supplierReference" class="form-control" placeholder="e.g. DN-44821" />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-semibold">Delivery date</label>
+            <input type="date" name="deliveryDate" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+        </div>
+    </div>
+
+    <table class="table bg-white shadow-sm align-middle">
+        <thead style="background:#1F3864;color:#fff;">
+            <tr><th>Item</th><th class="text-end">Ordered</th><th class="text-end">Already delivered</th><th class="text-end">Outstanding</th><th style="width:130px;">Receiving now</th><th>Condition</th></tr>
+        </thead>
+        <tbody>
+        @foreach (var line in Model.Lines)
+        {
+            var outstanding = line.QuantityOrdered - line.QuantityDelivered;
+            <tr>
+                <td>
+                    @line.Item.Description
+                    <input type="hidden" name="lineNumber" value="@line.LineNumber" />
+                    <input type="hidden" name="itemDescription" value="@line.Item.Description" />
+                </td>
+                <td class="text-end">@line.QuantityOrdered</td>
+                <td class="text-end">@line.QuantityDelivered</td>
+                <td class="text-end fw-semibold">@outstanding</td>
+                <td><input type="number" name="quantityDelivered" value="0" min="0" max="@outstanding" class="form-control form-control-sm" /></td>
+                <td>
+                    <select name="condition" class="form-select form-select-sm">
+                        <option>Good</option><option>Damaged</option><option>Short</option>
+                    </select>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+
+    <button type="submit" class="btn btn-success">Confirm Delivery</button>
+    <p class="text-muted small mt-2">Enter the quantity received for each line (partial deliveries are allowed). The order status updates automatically.</p>
+</form>

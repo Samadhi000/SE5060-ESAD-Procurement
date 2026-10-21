@@ -1,0 +1,113 @@
+@model PurchaseOrder
+@{
+    ViewData["Title"] = Model.PoReference;
+    var policy = ViewBag.PolicyResult as ApprovalPolicyResult;
+}
+
+<div class="mb-2"><a asp-action="Index" class="text-decoration-none">&larr; Approvals</a></div>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0" style="color:#1F3864;">
+        @Model.PoReference
+        <span class="badge bg-warning text-dark align-middle">@Model.Status</span>
+    </h2>
+    <h4 class="mb-0 fw-bold">Rs.@Model.TotalValue.ToString("N2")</h4>
+</div>
+
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-success py-2">@TempData["Message"]</div>
+}
+
+<div class="row">
+    <!-- LEFT: order information + lines -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm mb-3">
+            <div class="card-header fw-bold" style="color:#1F3864;">Order Information</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Site Location</dt><dd class="col-sm-8">@Model.Site?.SiteName — @Model.Site?.Address</dd>
+                    <dt class="col-sm-4">Contracted Supplier</dt><dd class="col-sm-8">@Model.Supplier?.Name</dd>
+                    <dt class="col-sm-4">Required Delivery By</dt><dd class="col-sm-8">@Model.RequiredByDate.ToString("dd MMM yyyy")</dd>
+                    <dt class="col-sm-4">Submitted By</dt><dd class="col-sm-8">@Model.CreatedBy?.Name</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-3">
+            <div class="card-header fw-bold" style="color:#1F3864;">Requisition Line Items</div>
+            <table class="table mb-0">
+                <thead><tr><th>Item</th><th class="text-end">Qty</th><th>Unit</th><th class="text-end">Unit Price</th><th class="text-end">Line Total</th></tr></thead>
+                <tbody>
+                @foreach (var line in Model.Lines)
+                {
+                    <tr>
+                        <td>@line.Item.Description</td>
+                        <td class="text-end">@line.QuantityOrdered</td>
+                        <td>@line.Item.UnitOfMeasure</td>
+                        <td class="text-end">Rs.@line.UnitPrice.ToString("N2")</td>
+                        <td class="text-end">Rs.@line.LineTotal.ToString("N2")</td>
+                    </tr>
+                }
+                </tbody>
+                <tfoot><tr class="fw-bold"><td colspan="4" class="text-end">Subtotal Order Value</td><td class="text-end">Rs.@Model.TotalValue.ToString("N2")</td></tr></tfoot>
+            </table>
+        </div>
+    </div>
+
+    <!-- RIGHT: decision workspace -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm mb-3">
+            <div class="card-header fw-bold" style="color:#1F3864;">Decision Workspace</div>
+            <div class="card-body">
+                @if (policy != null)
+                {
+                    <div class="alert @(policy.RequiresApproval ? "alert-warning" : "alert-success") py-2 small">
+                        <strong>Policy:</strong> @policy.Reason
+                    </div>
+                }
+
+                <div class="mb-2 small text-muted">Audit trail comment</div>
+                <form asp-action="Approve" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.PoReference" />
+                    <textarea name="comment" class="form-control mb-2" rows="2" placeholder="Add a note for the originator..."></textarea>
+                    <button type="submit" class="btn btn-success w-100 mb-2">&#10003; Approve Requisition</button>
+                </form>
+                <form asp-action="Decline" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.PoReference" />
+                    <input type="hidden" name="comment" value="Declined by approver" />
+                    <button type="submit" class="btn btn-outline-danger w-100 mb-2">&#10007; Decline Order</button>
+                </form>
+                <form asp-action="Refer" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.PoReference" />
+                    <input type="hidden" name="comment" value="Referred for further review" />
+                    <button type="submit" class="btn btn-outline-secondary w-100">&#8631; Refer to…</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header fw-bold" style="color:#1F3864;">Approval History</div>
+            <ul class="list-group list-group-flush">
+                @if (Model.Approvals.Count == 0)
+                {
+                    <li class="list-group-item text-muted small">No decisions recorded yet.</li>
+                }
+                else
+                {
+                    @foreach (var a in Model.Approvals.OrderByDescending(a => a.DecisionDate))
+                    {
+                        <li class="list-group-item small">
+                            <strong>@a.Decision</strong> by @a.ManagerName<br />
+                            <span class="text-muted">@a.DecisionDate.ToString("dd MMM yyyy, HH:mm")</span>
+                            @if (!string.IsNullOrWhiteSpace(a.Comment)) { <div class="fst-italic">"@a.Comment"</div> }
+                        </li>
+                    }
+                }
+            </ul>
+        </div>
+    </div>
+</div>

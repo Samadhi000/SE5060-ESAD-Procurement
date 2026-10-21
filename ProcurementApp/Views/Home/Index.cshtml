@@ -1,0 +1,52 @@
+﻿@{
+    ViewData["Title"] = "Procurement System";
+}
+
+<div class="text-center my-4">
+    <h1 style="color:#1F3864;">SitePro Procurement</h1>
+    <p class="text-muted">Mobile procurement for the construction industry — Case Study 2 implementation.</p>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6 col-lg-3">
+        <a asp-controller="Order" asp-action="Create" class="text-decoration-none">
+            <div class="card shadow-sm h-100"><div class="card-body text-center">
+                <div style="font-size:2rem;">&#128221;</div>
+                <h5 style="color:#1F3864;">Create Order</h5>
+                <p class="text-muted small mb-0">Raise and submit a purchase order. <br /><em>Builder pattern</em></p>
+            </div></div>
+        </a>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <a asp-controller="Approval" asp-action="Index" class="text-decoration-none">
+            <div class="card shadow-sm h-100"><div class="card-body text-center">
+                <div style="font-size:2rem;">&#9989;</div>
+                <h5 style="color:#1F3864;">Approvals</h5>
+                <p class="text-muted small mb-0">Approve / decline / refer requisitions. <br /><em>Strategy pattern</em></p>
+            </div></div>
+        </a>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <a asp-controller="Delivery" asp-action="Index" class="text-decoration-none">
+            <div class="card shadow-sm h-100"><div class="card-body text-center">
+                <div style="font-size:2rem;">&#128230;</div>
+                <h5 style="color:#1F3864;">Deliveries</h5>
+                <p class="text-muted small mb-0">Log goods receipts (incl. partial). <br /><em>State pattern</em></p>
+            </div></div>
+        </a>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <a asp-controller="Enquiry" asp-action="Index" class="text-decoration-none">
+            <div class="card shadow-sm h-100"><div class="card-body text-center">
+                <div style="font-size:2rem;">&#128269;</div>
+                <h5 style="color:#1F3864;">My Orders</h5>
+                <p class="text-muted small mb-0">Enquire, view history &amp; reports. <br /><em>Observer pattern</em></p>
+            </div></div>
+        </a>
+    </div>
+</div>
+
+<div class="text-center mt-4">
+    <a asp-controller="Enquiry" asp-action="Reports" class="btn btn-outline-primary btn-sm">Management Reports</a>
+    <a asp-controller="Notifications" asp-action="Index" class="btn btn-outline-primary btn-sm">Notifications</a>
+</div>

@@ -1,0 +1,31 @@
+@model IReadOnlyList<NotificationMessage>
+@{
+    ViewData["Title"] = "Notifications";
+}
+
+<h2 style="color:#1F3864;">Notifications</h2>
+<p class="text-muted">
+    Produced by the <strong>Observer pattern</strong>: every order event is forwarded by the
+    Notification Hub (subject) to the in-app inbox observer shown here.
+</p>
+
+@if (Model.Count == 0)
+{
+    <div class="alert alert-info">No notifications yet. Approve an order or record a delivery to generate some.</div>
+}
+else
+{
+    <ul class="list-group shadow-sm">
+    @foreach (var m in Model)
+    {
+        <li class="list-group-item">
+            <div class="d-flex justify-content-between">
+                <strong>@m.Recipient</strong>
+                <span class="text-muted small">@m.Timestamp.ToString("dd MMM, HH:mm:ss")</span>
+            </div>
+            <div>@m.Text</div>
+            <div class="text-muted small">Order @m.OrderReference</div>
+        </li>
+    }
+    </ul>
+}

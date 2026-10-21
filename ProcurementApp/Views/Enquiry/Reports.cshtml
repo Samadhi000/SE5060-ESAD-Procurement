@@ -1,0 +1,41 @@
+@model IReadOnlyList<StatusSummaryRow>
+@{
+    ViewData["Title"] = "Procurement Reports";
+    var total = (decimal)ViewBag.Total;
+}
+
+<h2 style="color:#1F3864;">Procurement Management Reports</h2>
+<p class="text-muted">Consolidated view of all purchase orders by status (for Management).</p>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm text-center"><div class="card-body">
+            <div class="text-muted small">TOTAL ORDERS</div>
+            <div class="fs-3 fw-bold" style="color:#1F3864;">@Model.Sum(r => r.Count)</div>
+        </div></div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm text-center"><div class="card-body">
+            <div class="text-muted small">TOTAL VALUE</div>
+            <div class="fs-3 fw-bold" style="color:#1F3864;">Rs.@total.ToString("N2")</div>
+        </div></div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm text-center"><div class="card-body">
+            <div class="text-muted small">STATUSES IN USE</div>
+            <div class="fs-3 fw-bold" style="color:#1F3864;">@Model.Count</div>
+        </div></div>
+    </div>
+</div>
+
+<table class="table bg-white shadow-sm">
+    <thead style="background:#1F3864;color:#fff;">
+        <tr><th>Status</th><th class="text-end">Order Count</th><th class="text-end">Total Value</th></tr>
+    </thead>
+    <tbody>
+    @foreach (var r in Model)
+    {
+        <tr><td>@r.Status</td><td class="text-end">@r.Count</td><td class="text-end">Rs.@r.Value.ToString("N2")</td></tr>
+    }
+    </tbody>
+</table>
