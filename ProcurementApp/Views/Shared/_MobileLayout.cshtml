@@ -34,7 +34,8 @@
 
         @* ---- status bar ---- *@
         <div class="statusbar @(plain ? "statusbar--light" : "statusbar--navy")">
-            <span>9:41</span>
+            @* Real Sri Lankan time; sitepro.js keeps it ticking after this first render. *@
+            <span data-clock>@DeviceClock.ColomboTime()</span>
             <span class="statusbar__icons">
                 <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="4.5" y="5.5" width="3" height="6.5" rx="1"/><rect x="9" y="3" width="3" height="9" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg>
                 <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1 4.2a10 10 0 0 1 14 0"/><path d="M3.5 6.9a6.5 6.5 0 0 1 9 0"/><path d="M6 9.6a3 3 0 0 1 4 0"/></svg>

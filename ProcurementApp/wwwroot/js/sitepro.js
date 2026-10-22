@@ -5,6 +5,37 @@
 (function () {
     'use strict';
 
+    // ---- status-bar clock: real Sri Lankan time, whatever the device's own timezone ----
+    // The server renders the first value; this keeps it current while the page is open.
+    var clock = document.querySelector('[data-clock]');
+    if (clock && window.Intl && Intl.DateTimeFormat) {
+        var colombo = new Intl.DateTimeFormat('en-GB', {
+            timeZone: 'Asia/Colombo',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        });
+
+        var tick = function () {
+            try {
+                // formatToParts avoids locale quirks around the AM/PM suffix, which the
+                // phone status bar in the design's mockups does not show.
+                var parts = colombo.formatToParts(new Date());
+                var hour = '', minute = '';
+                parts.forEach(function (p) {
+                    if (p.type === 'hour') { hour = p.value; }
+                    if (p.type === 'minute') { minute = p.value; }
+                });
+                if (hour && minute) { clock.textContent = hour + ':' + minute; }
+            } catch (e) {
+                /* leave the server-rendered time in place */
+            }
+        };
+
+        tick();
+        setInterval(tick, 15000);
+    }
+
     // ---- quantity steppers: the "− 10 +" control on the catalogue and delivery screens ----
     document.addEventListener('click', function (e) {
         var btn = e.target.closest('[data-step]');
