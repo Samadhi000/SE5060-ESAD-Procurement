@@ -3,12 +3,7 @@ using ProcurementApp.Domain.Enums;
 
 namespace ProcurementApp.Builders;
 
-/// <summary>
-/// BUILDER PATTERN — assembles a <see cref="PurchaseOrder"/> step by step (choose site, choose
-/// supplier, add each priced line) and only produces a finished order through <c>Build…()</c>,
-/// which validates it first. This matches the multi-step "New Purchase Order" wizard in the
-/// wireframe and guarantees an order can never exist in a half-valid state. Used by Module 1.
-/// </summary>
+/// <summary>Builder pattern: assembles a PurchaseOrder step by step; a finished order is produced only through BuildAsDraft/BuildForApproval, which validate first.</summary>
 public class PurchaseOrderBuilder
 {
     private readonly PurchaseOrder _order = new();
@@ -63,7 +58,7 @@ public class PurchaseOrderBuilder
         return this;
     }
 
-    /// <summary>Finish as a draft (saved for later) — minimal checks only.</summary>
+    /// <summary>Finish as a draft (light checks only).</summary>
     public PurchaseOrder BuildAsDraft()
     {
         Require(_order.Site is not null, "A delivery site must be selected.");
@@ -73,7 +68,7 @@ public class PurchaseOrderBuilder
         return _order;
     }
 
-    /// <summary>Finish and submit for approval — full validation (brief: no line may be unpriced).</summary>
+    /// <summary>Finish and submit for approval (full validation).</summary>
     public PurchaseOrder BuildForApproval()
     {
         Require(_order.Site is not null, "A delivery site must be selected.");

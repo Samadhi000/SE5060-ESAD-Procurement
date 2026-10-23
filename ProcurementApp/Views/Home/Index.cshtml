@@ -14,7 +14,7 @@
     <div>
         <h1 class="page-title">SitePro Procurement</h1>
         <p class="page-sub">
-            Procurement for Construction — SE5060 Case Study 2 implementation of the ESAD-02 design.
+            Site procurement, approvals and goods receipt for construction projects.
         </p>
     </div>
 </div>
@@ -46,7 +46,7 @@
             <div class="row-between gap-12 mb-16">
                 <div>
                     <h2 class="mt-0" style="margin-bottom:4px;font-size:19px;font-weight:700;color:var(--navy);">
-                        Site Manager — mobile app
+                        Site Operations
                     </h2>
                     <p class="muted mb-0" style="font-size:14px;">
                         Raise requisitions, receive goods and check order status from the job site.
@@ -59,21 +59,21 @@
                 <a class="lrow" asp-controller="Order" asp-action="Create">
                     <div>
                         <div class="lrow__name">Create &amp; Submit Purchase Order</div>
-                        <div class="lrow__sub">Module 1 &middot; Builder pattern</div>
+                        <div class="lrow__sub">Raise a materials requisition and send it for approval</div>
                     </div>
                     <span class="muted">&rarr;</span>
                 </a>
                 <a class="lrow" asp-controller="Delivery" asp-action="Index">
                     <div>
                         <div class="lrow__name">Log Delivery <span class="muted">(@deliverable open)</span></div>
-                        <div class="lrow__sub">Module 3 &middot; State pattern</div>
+                        <div class="lrow__sub">Record goods received against placed orders</div>
                     </div>
                     <span class="muted">&rarr;</span>
                 </a>
                 <a class="lrow" asp-controller="Enquiry" asp-action="Index">
                     <div>
                         <div class="lrow__name">My Orders &amp; history</div>
-                        <div class="lrow__sub">Module 4 &middot; Observer pattern</div>
+                        <div class="lrow__sub">Track approval and delivery progress</div>
                     </div>
                     <span class="muted">&rarr;</span>
                 </a>
@@ -87,7 +87,7 @@
             <div class="row-between gap-12 mb-16">
                 <div>
                     <h2 class="mt-0" style="margin-bottom:4px;font-size:19px;font-weight:700;color:var(--navy);">
-                        Approving Manager — portal
+                        Back Office
                     </h2>
                     <p class="muted mb-0" style="font-size:14px;">Review and resolve requisitions in the office.</p>
                 </div>
@@ -98,29 +98,28 @@
                 <a class="lrow" asp-controller="Approval" asp-action="Index">
                     <div>
                         <div class="lrow__name">Pending Approvals <span class="muted">(@pending)</span></div>
-                        <div class="lrow__sub">Module 2 &middot; Strategy + Factory</div>
+                        <div class="lrow__sub">Review requisitions awaiting a decision</div>
                     </div>
                     <span class="muted">&rarr;</span>
                 </a>
                 <a class="lrow" asp-controller="Enquiry" asp-action="Portal">
                     <div>
                         <div class="lrow__name">Order Enquiry workspace</div>
-                        <div class="lrow__sub">Module 4 &middot; office view</div>
+                        <div class="lrow__sub">Search and drill into any purchase order</div>
                     </div>
                     <span class="muted">&rarr;</span>
                 </a>
                 <a class="lrow" asp-controller="Enquiry" asp-action="Reports">
                     <div>
                         <div class="lrow__name">Management Reports</div>
-                        <div class="lrow__sub">Consolidated status summary</div>
+                        <div class="lrow__sub">Spend and status summary across all sites</div>
                     </div>
                     <span class="muted">&rarr;</span>
                 </a>
             </div>
 
             <div class="alert alert--info mt-16 mb-0">
-                <strong>Active approval policy:</strong>&nbsp;@ViewBag.PolicyName
-                <span class="muted">— change <code>Approval:Policy</code> in appsettings.json to swap the rule.</span>
+                <strong>Approval policy in force:</strong>&nbsp;@ViewBag.PolicyName
             </div>
         </div>
     </div>

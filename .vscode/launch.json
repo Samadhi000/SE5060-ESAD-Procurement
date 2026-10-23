@@ -1,0 +1,26 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // F5 — runs the web app and opens the browser when it is listening.
+      // Uses plain HTTP so there is no certificate prompt.
+      "name": "Run SitePro (web)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/ProcurementApp/bin/Debug/net7.0/ProcurementApp.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/ProcurementApp",
+      "stopAtEntry": false,
+      "console": "integratedTerminal",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5027"
+      },
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\bNow listening on:\s+(https?://\S+)"
+      }
+    }
+  ]
+}

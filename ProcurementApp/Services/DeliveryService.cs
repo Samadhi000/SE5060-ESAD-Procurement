@@ -12,7 +12,7 @@ public record DeliveryResult(bool Success, string Message, PurchaseOrderStatus? 
                              string? Reference = null,
                              IReadOnlyList<DeliveryLineRequest>? Recorded = null);
 
-/// <summary>Business logic for Module 3 — Log Delivery / Goods Receipt (UC3 / SD3).</summary>
+/// <summary>Module 3: log a delivery (including partial), using the State pattern.</summary>
 public interface IDeliveryService
 {
     IReadOnlyList<PurchaseOrder> GetDeliverableOrders();
@@ -34,7 +34,6 @@ public class DeliveryService : IDeliveryService
         _notifications = notifications;
     }
 
-    // Orders that are placed or partly delivered can still receive goods.
     public IReadOnlyList<PurchaseOrder> GetDeliverableOrders() =>
         _orders.GetByStatus(PurchaseOrderStatus.Placed)
             .Concat(_orders.GetByStatus(PurchaseOrderStatus.PartiallyDelivered))
@@ -48,12 +47,11 @@ public class DeliveryService : IDeliveryService
         var order = _orders.GetByReference(reference);
         if (order is null) return new DeliveryResult(false, $"Order {reference} not found.", null);
 
-        // STATE PATTERN: ask the current state whether a delivery is even allowed.
+        // State pattern: the current state decides whether a delivery is allowed.
         var state = OrderStateFactory.For(order.Status);
         if (!state.CanReceiveDelivery)
             return new DeliveryResult(false, $"Order is '{order.Status}' and cannot receive deliveries.", order.Status);
 
-        // Build the delivery note and apply each delivered quantity to the matching order line.
         var note = new DeliveryNote
         {
             DeliveryNoteId = "DN-" + Guid.NewGuid().ToString("N")[..6].ToUpper(),
@@ -78,7 +76,7 @@ public class DeliveryService : IDeliveryService
                 orderLine.QuantityDelivered += reqLine.QuantityDelivered;
         }
 
-        // STATE PATTERN: the state decides the resulting status (partially vs fully delivered).
+        // State pattern: the state decides the resulting status (partial vs full).
         var allFully = order.Lines.All(l => l.IsFullyDelivered());
         var newStatus = state.AfterDelivery(allFully);
         order.ChangeStatus(newStatus);
@@ -86,10 +84,9 @@ public class DeliveryService : IDeliveryService
         _deliveries.Add(note);
         _orders.Update(order);
 
-        // OBSERVER: notify procurement when the order is ready for invoice matching.
         var message = newStatus == PurchaseOrderStatus.FullyDelivered
-            ? "Order fully delivered — ready for invoice matching."
-            : "Partial delivery recorded — balance still outstanding.";
+            ? "Order fully delivered. Ready for invoice matching."
+            : "Partial delivery recorded. Balance still outstanding.";
         _notifications.Notify("Procurement / Accounting Staff", message, order);
 
         return new DeliveryResult(true, message, newStatus, reference, note.Lines

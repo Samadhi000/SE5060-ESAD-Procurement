@@ -48,7 +48,7 @@
                 </div>
                 <div class="specs__row">
                     <div class="specs__k">Submitted By</div>
-                    <div class="specs__v">@(o.CreatedBy?.Name ?? "—")</div>
+                    <div class="specs__v">@(o.CreatedBy?.Name ?? "Not recorded")</div>
                 </div>
             </div>
         </div>
@@ -88,7 +88,7 @@
         @foreach (var c in o.Comments)
         {
             <div class="timeline__note" style="margin-bottom:10px;">
-                “@c.Text” <span class="muted" style="font-style:normal;">— @c.Author</span>
+                “@c.Text” <span class="muted" style="font-style:normal;">@c.Author</span>
             </div>
         }
     }

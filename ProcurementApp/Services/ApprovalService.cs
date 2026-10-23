@@ -7,17 +7,11 @@ namespace ProcurementApp.Services;
 
 public record ApprovalActionResult(bool Success, string Message);
 
-/// <summary>
-/// Business logic for Module 2 — Review and Approve / Decline / Refer a Requisition (UC2/SD2).
-/// The controller stays thin and calls into this service. The service uses the injected
-/// <see cref="IApprovalPolicy"/> (Strategy) and records history + fires notifications.
-/// </summary>
+/// <summary>Module 2: approve, decline or refer a requisition. Uses the injected approval policy (Strategy) and records the decision.</summary>
 public interface IApprovalService
 {
     string PolicyName { get; }
     IReadOnlyList<PurchaseOrder> GetPending();
-
-    /// <summary>Everything in the approver queue: awaiting a decision, plus referred on.</summary>
     IReadOnlyList<PurchaseOrder> GetQueue();
     PurchaseOrder? Get(string reference);
     ApprovalPolicyResult EvaluatePolicy(PurchaseOrder order);
@@ -26,7 +20,6 @@ public interface IApprovalService
     ApprovalActionResult Decline(string reference, string managerName, string comment);
     ApprovalActionResult Refer(string reference, string managerName, string comment);
 
-    /// <summary>Applies the policy (Strategy) to every pending order, auto-approving those that don't need a manager.</summary>
     int ApplyPolicyAutoApprovals(string systemActor);
 }
 
@@ -51,6 +44,7 @@ public class ApprovalService : IApprovalService
     public IReadOnlyList<PurchaseOrder> GetPending() =>
         _orders.GetByStatus(PurchaseOrderStatus.WaitingForApproval);
 
+    // Awaiting a decision, plus anything referred on.
     public IReadOnlyList<PurchaseOrder> GetQueue() =>
         _orders.GetByStatus(PurchaseOrderStatus.WaitingForApproval)
             .Concat(_orders.GetByStatus(PurchaseOrderStatus.Referred))
@@ -69,7 +63,7 @@ public class ApprovalService : IApprovalService
             return new ApprovalActionResult(false, $"Order {reference} is not awaiting approval.");
 
         order.ChangeStatus(PurchaseOrderStatus.Approved);
-        order.ChangeStatus(PurchaseOrderStatus.Placed);   // approved orders are placed & sent to the supplier
+        order.ChangeStatus(PurchaseOrderStatus.Placed);
         RecordDecision(order, ApprovalDecisionType.Approved, managerName, comment);
         _orders.Update(order);
 
@@ -108,6 +102,7 @@ public class ApprovalService : IApprovalService
         return new ApprovalActionResult(true, $"{reference} referred for further review.");
     }
 
+    // Runs the policy over every pending order and auto-approves those it does not flag.
     public int ApplyPolicyAutoApprovals(string systemActor)
     {
         var count = 0;

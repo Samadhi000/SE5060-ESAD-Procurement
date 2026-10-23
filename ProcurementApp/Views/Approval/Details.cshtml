@@ -40,7 +40,7 @@
                 <div class="specs specs--inline">
                     <div class="specs__row">
                         <div class="specs__k">Site Location</div>
-                        <div class="specs__v">@Model.Site?.SiteName — @Model.Site?.Address</div>
+                        <div class="specs__v">@Model.Site?.SiteName, @Model.Site?.Address</div>
                     </div>
                     <div class="specs__row">
                         <div class="specs__k">Contracted Supplier</div>
@@ -56,7 +56,7 @@
                     </div>
                     <div class="specs__row">
                         <div class="specs__k">Submitted By</div>
-                        <div class="specs__v">@(Model.CreatedBy?.Name ?? "—")</div>
+                        <div class="specs__v">@(Model.CreatedBy?.Name ?? "Not recorded")</div>
                     </div>
                 </div>
             </div>
@@ -181,7 +181,7 @@
             else
             {
                 <div class="alert alert--info" style="margin:0;">
-                    This requisition is <strong>@StatusDisplay.Label(Model.Status)</strong> — no further decision is required.
+                    This requisition is <strong>@StatusDisplay.Label(Model.Status)</strong>. No further decision is required.
                 </div>
             }
         </div>

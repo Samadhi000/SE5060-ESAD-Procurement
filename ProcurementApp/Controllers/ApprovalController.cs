@@ -5,20 +5,13 @@ using ProcurementApp.Services;
 
 namespace ProcurementApp.Controllers;
 
-/// <summary>
-/// Module 2 — Review and Approve / Decline / Refer a Requisition (UC2 / SD2).
-/// Thin controller: it only receives the request and delegates to <see cref="IApprovalService"/>.
-/// No authentication (out of scope); the acting manager is a fixed demo user.
-/// Screens follow the design's pending-approvals and requisition-review wireframes.
-/// </summary>
+/// <summary>Module 2: thin controller for approve / decline / refer. Delegates to IApprovalService.</summary>
 public class ApprovalController : Controller
 {
     private readonly IApprovalService _approvals;
 
-    // No login in scope — the signed-in approver is assumed to be this seeded manager.
+    // No login in scope; the approver is a fixed demo user.
     private const string CurrentManager = "Sarah Chen (Commercial Manager)";
-
-    /// <summary>An order still waiting this many days after being raised is flagged overdue.</summary>
     private const int OverdueAfterDays = 5;
 
     public ApprovalController(IApprovalService approvals)
@@ -26,7 +19,6 @@ public class ApprovalController : Controller
         _approvals = approvals;
     }
 
-    // GET /Approval  → Pending Approvals list (pending-approvals.png)
     public IActionResult Index(string? filter)
     {
         var queue = _approvals.GetQueue();
@@ -40,7 +32,9 @@ public class ApprovalController : Controller
             ["referred"] = queue.Count(o => o.Status == PurchaseOrderStatus.Referred),
             ["overdue"] = queue.Count(IsOverdue)
         };
-        ViewBag.PolicyFor = queue.ToDictionary(o => o.PoReference, o => _approvals.EvaluatePolicy(o));
+        // Group by reference so a duplicate PO reference shows one verdict instead of crashing.
+        ViewBag.PolicyFor = queue.GroupBy(o => o.PoReference)
+                                 .ToDictionary(g => g.Key, g => _approvals.EvaluatePolicy(g.First()));
         ViewBag.OverdueRefs = queue.Where(IsOverdue).Select(o => o.PoReference).ToHashSet();
 
         var shown = filter switch
@@ -54,7 +48,6 @@ public class ApprovalController : Controller
         return View(shown);
     }
 
-    // GET /Approval/Details/PO-2026-04817  → decision screen (requisition-review.png)
     public IActionResult Details(string id)
     {
         var order = _approvals.Get(id);
@@ -91,7 +84,7 @@ public class ApprovalController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    // POST /Approval/ApplyPolicy → runs the Strategy over all pending orders
+    // Runs the approval policy (Strategy) over all pending orders.
     [HttpPost]
     [ValidateAntiForgeryToken]
     public IActionResult ApplyPolicy()

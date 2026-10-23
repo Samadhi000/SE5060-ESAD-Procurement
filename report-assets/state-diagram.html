@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Purchase Order State Machine</title>
+<style>
+  html,body{margin:0;padding:0;background:#fff;}
+  body{padding:10px;}
+  svg{width:100%;height:auto;display:block;font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;}
+  .st{font-size:14px;font-weight:700;fill:#1E3A5F;}
+  .lb{font-size:11.5px;fill:#475569;}
+  .lbi{font-size:11.5px;fill:#64748B;font-style:italic;}
+  .ttl{font-size:19px;font-weight:700;fill:#1E3A5F;}
+  .sub{font-size:12.5px;fill:#64748B;}
+  .lg{font-size:12px;fill:#334155;}
+  .lgh{font-size:12px;font-weight:700;fill:#1E3A5F;}
+</style>
+</head>
+<body>
+<svg width="1180" height="700" viewBox="0 0 1180 700" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="ar" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 z" fill="#475569"/>
+    </marker>
+    <marker id="ard" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 z" fill="#94A3B8"/>
+    </marker>
+  </defs>
+
+  <text class="ttl" x="20" y="28">Purchase Order Lifecycle: State Machine</text>
+  <text class="sub" x="20" y="48">SitePro Procurement  |  How a purchase order moves through its statuses</text>
+
+  <!-- ============ ROW 1: approval path ============ -->
+  <circle cx="38" cy="88" r="8" fill="#1E3A5F"/>
+  <line x1="48" y1="88" x2="64" y2="88" stroke="#475569" stroke-width="1.6" marker-end="url(#ar)"/>
+
+  <rect x="66"  y="60" width="120" height="56" rx="10" fill="#EEF3FB" stroke="#1E3A5F" stroke-width="1.6"/>
+  <text class="st" x="126" y="94" text-anchor="middle">Draft</text>
+
+  <line x1="186" y1="88" x2="260" y2="88" stroke="#475569" stroke-width="1.6" marker-end="url(#ar)"/>
+  <text class="lb" x="223" y="80" text-anchor="middle">submit</text>
+
+  <rect x="266" y="60" width="200" height="56" rx="10" fill="#FEF3C7" stroke="#B45309" stroke-width="1.6"/>
+  <text class="st" x="366" y="94" text-anchor="middle">Waiting for Approval</text>
+
+  <line x1="466" y1="88" x2="540" y2="88" stroke="#475569" stroke-width="1.6" marker-end="url(#ar)"/>
+  <text class="lb" x="503" y="80" text-anchor="middle">approve</text>
+
+  <rect x="546" y="60" width="130" height="56" rx="10" fill="#D1FAE5" stroke="#047857" stroke-width="1.6"/>
+  <text class="st" x="611" y="94" text-anchor="middle">Approved</text>
+
+  <line x1="676" y1="88" x2="750" y2="88" stroke="#475569" stroke-width="1.6" marker-end="url(#ar)"/>
+  <text class="lb" x="713" y="80" text-anchor="middle">place</text>
+
+  <rect x="756" y="60" width="120" height="56" rx="10" fill="#D1FAE5" stroke="#047857" stroke-width="1.6"/>
+  <text class="st" x="816" y="94" text-anchor="middle">Placed</text>
+
+  <!-- ============ ROW 2: decline / refer ============ -->
+  <line x1="300" y1="116" x2="170" y2="196" stroke="#475569" stroke-width="1.6" marker-end="url(#ar)"/>
+  <text class="lb" x="196" y="150" text-anchor="middle">decline</text>
+
+  <rect x="66"  y="200" width="150" height="56" rx="10" fill="#FEE2E2" stroke="#B91C1C" stroke-width="1.6"/>
+  <text class="st" x="141" y="234" text-anchor="middle">Declined</text>
+
+  <line x1="141" y1="256" x2="141" y2="286" stroke="#475569" stroke-width="1.6" marker-end="url(#ar)"/>
+  <circle cx="141" cy="302" r="9" fill="none" stroke="#1E3A5F" stroke-width="1.8"/>
+  <circle cx="141" cy="302" r="4.5" fill="#1E3A5F"/>
+
+  <line x1="346" y1="116" x2="346" y2="196" stroke="#475569" stroke-width="1.6" marker-end="url(#ar)"/>
+  <text class="lb" x="338" y="162" text-anchor="end">refer</text>
+
+  <rect x="291" y="200" width="150" height="56" rx="10" fill="#DBEAFE" stroke="#1D4ED8" stroke-width="1.6"/>
+  <text class="st" x="366" y="234" text-anchor="middle">Referred</text>
+
+  <line x1="390" y1="196" x2="390" y2="120" stroke="#94A3B8" stroke-width="1.6"
+        stroke-dasharray="6 4" marker-end="url(#ard)"/>
+  <text class="lbi" x="400" y="162">re-submit *</text>
+
+  <!-- ============ ROW 3: delivery path ============ -->
+  <polyline points="816,116 816,330 651,330 651,414" fill="none"
+            stroke="#475569" stroke-width="1.6" marker-end="url(#ar)"/>
+  <text class="lb" x="733" y="322" text-anchor="middle">part received</text>
+
+  <rect x="546" y="420" width="210" height="56" rx="10" fill="#DBEAFE" stroke="#1D4ED8" stroke-width="1.6"/>
+  <text class="st" x="651" y="454" text-anchor="middle">Partially Delivered</text>
+
+  <path d="M610,476 C610,524 692,524 692,478" fill="none"
+        stroke="#475569" stroke-width="1.6" marker-end="url(#ar)"/>
+  <text class="lb" x="651" y="540" text-anchor="middle">more goods arrive</text>
+
+  <line x1="756" y1="448" x2="830" y2="448" stroke="#475569" stroke-width="1.6" marker-end="url(#ar)"/>
+  <text class="lb" x="793" y="440" text-anchor="middle">final delivery</text>
+
+  <polyline points="876,88 1100,88 1100,380 926,380 926,414" fill="none"
+            stroke="#475569" stroke-width="1.6" marker-end="url(#ar)"/>
+  <text class="lb" x="1013" y="372" text-anchor="middle">all received</text>
+
+  <rect x="836" y="420" width="180" height="56" rx="10" fill="#D1FAE5" stroke="#047857" stroke-width="1.6"/>
+  <text class="st" x="926" y="454" text-anchor="middle">Fully Delivered</text>
+
+  <line x1="1016" y1="448" x2="1046" y2="448" stroke="#475569" stroke-width="1.6" marker-end="url(#ar)"/>
+  <circle cx="1062" cy="448" r="9" fill="none" stroke="#1E3A5F" stroke-width="1.8"/>
+  <circle cx="1062" cy="448" r="4.5" fill="#1E3A5F"/>
+
+  <!-- ============ legend ============ -->
+  <rect x="66" y="372" width="420" height="206" rx="10" fill="#F8FAFC" stroke="#E3E9F0" stroke-width="1.4"/>
+  <text class="lgh" x="86" y="398">How to read this diagram</text>
+
+  <line x1="88" y1="418" x2="126" y2="418" stroke="#475569" stroke-width="1.6" marker-end="url(#ar)"/>
+  <text class="lg" x="138" y="422">Transition built and working in this build</text>
+
+  <line x1="88" y1="444" x2="126" y2="444" stroke="#94A3B8" stroke-width="1.6"
+        stroke-dasharray="6 4" marker-end="url(#ard)"/>
+  <text class="lg" x="138" y="448">* Designed, but not implemented yet</text>
+
+  <circle cx="100" cy="470" r="7" fill="#1E3A5F"/>
+  <text class="lg" x="138" y="474">Start of the lifecycle</text>
+
+  <circle cx="100" cy="496" r="7.5" fill="none" stroke="#1E3A5F" stroke-width="1.8"/>
+  <circle cx="100" cy="496" r="3.5" fill="#1E3A5F"/>
+  <text class="lg" x="138" y="500">End state, no further change</text>
+
+  <text class="lg" x="86" y="530">Defined in the ESAD-02 design but not used in</text>
+  <text class="lg" x="86" y="548">this build: Partially Approved, Returned to</text>
+  <text class="lg" x="86" y="566">Originator, Void.</text>
+
+  <text class="lbi" x="66" y="612">* A referred requisition cannot yet be sent back for a fresh decision; see the limitations section of the report.</text>
+</svg>
+</body>
+</html>

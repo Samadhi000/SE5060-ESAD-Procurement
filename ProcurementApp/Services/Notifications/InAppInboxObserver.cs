@@ -1,9 +1,6 @@
 namespace ProcurementApp.Services;
 
-/// <summary>
-/// OBSERVER #1 — keeps notifications in an in-app inbox so they can be shown on the
-/// Notifications page (the bell icon). Registered as a Singleton so the inbox is shared.
-/// </summary>
+/// <summary>Observer that keeps notifications in an in-app inbox for the Notifications page.</summary>
 public class InAppInboxObserver : INotificationObserver
 {
     private readonly object _lock = new();
@@ -11,7 +8,7 @@ public class InAppInboxObserver : INotificationObserver
 
     public void OnNotify(NotificationMessage message)
     {
-        lock (_lock) { _inbox.Insert(0, message); }   // newest first
+        lock (_lock) { _inbox.Insert(0, message); }
     }
 
     public IReadOnlyList<NotificationMessage> GetRecent(int max = 50)

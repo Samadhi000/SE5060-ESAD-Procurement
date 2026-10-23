@@ -39,8 +39,8 @@
 }
 
 <div class="alert alert--info">
-    <strong>Active approval policy (Strategy):</strong>&nbsp;@ViewBag.PolicyName
-    <span class="muted">— “Apply Approval Policy” auto-approves every order the policy does not flag.</span>
+    <strong>Approval policy in force:</strong>&nbsp;@ViewBag.PolicyName.
+    <span class="muted">Running the policy clears every requisition it does not flag for manual review.</span>
 </div>
 
 <div class="chips mb-24">
@@ -90,7 +90,7 @@ else
                         <td>@o.Site?.SiteName</td>
                         <td class="muted">@o.Supplier?.Name</td>
                         <td class="num strong">LKR @o.TotalValue.ToString("N2")</td>
-                        <td>@(o.CreatedBy?.Name ?? "—")</td>
+                        <td>@(o.CreatedBy?.Name ?? "Not recorded")</td>
                         <td class="muted">@o.DateCreated.ToString("d MMM yyyy")</td>
                         <td>
                             @if (needs)

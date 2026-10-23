@@ -3,11 +3,7 @@ using ProcurementApp.Services;
 
 namespace ProcurementApp.Controllers;
 
-/// <summary>
-/// Module 1 — Create &amp; Submit a Purchase Order (UC1 / SD1). Uses the Builder pattern
-/// (inside <see cref="IOrderCreationService"/>) to assemble the order step by step.
-/// The three steps mirror the design's wireframes PurchaseOrder-1..3.
-/// </summary>
+/// <summary>Module 1: create and submit a purchase order through a three-step wizard. Uses the Builder.</summary>
 public class OrderController : Controller
 {
     private readonly IOrderCreationService _service;
@@ -17,7 +13,7 @@ public class OrderController : Controller
         _service = service;
     }
 
-    // Step 1 — choose site, supplier, optional depot and required-by date (PurchaseOrder-1).
+    // Step 1: choose site, supplier, optional depot and required-by date.
     public IActionResult Create()
     {
         ViewBag.Sites = _service.GetSites();
@@ -25,7 +21,7 @@ public class OrderController : Controller
         return View();
     }
 
-    // Step 2 — add catalogue items for the chosen supplier (PurchaseOrder-2).
+    // Step 2: add catalogue items for the chosen supplier.
     public IActionResult AddItems(int siteId, int supplierId, int? depotId, DateTime requiredBy)
     {
         var supplier = _service.GetSuppliers().FirstOrDefault(s => s.Id == supplierId);
@@ -39,8 +35,7 @@ public class OrderController : Controller
         return View(_service.GetCatalogue(supplier.SupplierId));
     }
 
-    // Step 3 — review the assembled order before committing (PurchaseOrder-3).
-    // The Builder produces it as an unsaved DRAFT purely so it can be displayed.
+    // Step 3: review the assembled order (shown as an unsaved draft) before submitting.
     [HttpPost]
     [ValidateAntiForgeryToken]
     public IActionResult Review(int siteId, int supplierId, int? depotId, DateTime requiredBy,
@@ -61,7 +56,7 @@ public class OrderController : Controller
         return View(draft);
     }
 
-    // Submit — the Builder validates and the order is saved (PurchaseOrder-4 follows).
+    // Submit: the Builder validates and the order is saved.
     [HttpPost]
     [ValidateAntiForgeryToken]
     public IActionResult Submit(int siteId, int supplierId, int? depotId, DateTime requiredBy,
@@ -89,7 +84,7 @@ public class OrderController : Controller
         return View();
     }
 
-    /// <summary>Pairs up the parallel itemCode[] / quantity[] form arrays into line requests.</summary>
+    // Pairs the parallel itemCode[]/quantity[] form arrays into line requests.
     private static OrderDraftRequest ToDraftRequest(int siteId, int supplierId, int? depotId,
                                                     DateTime requiredBy, string[] itemCode, int[] quantity)
     {

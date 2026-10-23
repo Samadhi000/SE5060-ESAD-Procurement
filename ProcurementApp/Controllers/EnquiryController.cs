@@ -5,14 +5,7 @@ using ProcurementApp.Services;
 
 namespace ProcurementApp.Controllers;
 
-/// <summary>
-/// Module 4 — Enquire About / View Orders + Reports (UC4). Read-only screens. The notification
-/// side of this module uses the Observer pattern (see <see cref="NotificationsController"/>).
-///
-/// The design provides both a phone view (my-orders-mobile, order-detail-mobile) and an office
-/// view (order-enquiry-desktop), so both are implemented: Index/Details are the mobile screens,
-/// Portal is the desktop one.
-/// </summary>
+/// <summary>Module 4: enquire about and view orders, plus reports. Index/Details are the phone views; Portal is the desktop one.</summary>
 public class EnquiryController : Controller
 {
     private readonly IEnquiryService _service;
@@ -24,7 +17,7 @@ public class EnquiryController : Controller
         _reference = reference;
     }
 
-    // MOBILE — My Orders list with search + status chips (my-orders-mobile).
+    // Phone: My Orders list with search and status chips.
     public IActionResult Index(string? q, PurchaseOrderStatus? status)
     {
         ViewBag.Query = q;
@@ -32,18 +25,18 @@ public class EnquiryController : Controller
         return View(_service.Search(q, status));
     }
 
-    // MOBILE — order detail with Details / Approval History / Deliveries tabs (order-detail-mobile).
+    // Phone: order detail with Details / Approval History / Deliveries tabs.
     public IActionResult Details(string id, string? tab)
     {
         var result = _service.GetDetail(id);
         if (result is null) return NotFound();
 
-        // NOTE: not "Tab" — the mobile layout reserves ViewData["Tab"] for the bottom tab bar.
+        // Not "Tab": the mobile layout reserves ViewData["Tab"] for the bottom tab bar.
         ViewBag.DetailTab = string.IsNullOrEmpty(tab) ? "details" : tab;
         return View(result);
     }
 
-    // DESKTOP — Order Enquiry workspace: filters, result list, detail pane (order-enquiry-desktop).
+    // Desktop: Order Enquiry workspace with filters, result list and a detail pane.
     public IActionResult Portal(string? q, PurchaseOrderStatus? status, int? siteId, int? supplierId, string? selected)
     {
         var results = _service.Search(q, status);
@@ -60,14 +53,12 @@ public class EnquiryController : Controller
         ViewBag.Sites = _reference.GetSites();
         ViewBag.Suppliers = _reference.GetSuppliers();
 
-        // The right-hand pane shows whichever order is selected, defaulting to the first result.
         var reference = selected ?? results.FirstOrDefault()?.PoReference;
         ViewBag.Selected = reference is null ? null : _service.GetDetail(reference);
 
         return View(results);
     }
 
-    // Management reports.
     public IActionResult Reports()
     {
         ViewBag.Total = _service.GetTotalValue();

@@ -117,7 +117,7 @@
                         <span class="pill @StatusDisplay.PillClass(o.Status)">@StatusDisplay.Label(o.Status)</span>
                     </div>
                     <p class="muted" style="margin:0 0 16px;font-size:13.5px;">
-                        Submitted by @(o.CreatedBy?.Name ?? "—") &middot; @o.DateCreated.ToString("d MMM yyyy")
+                        Submitted by @(o.CreatedBy?.Name ?? "Not recorded") &middot; @o.DateCreated.ToString("d MMM yyyy")
                     </p>
 
                     <div class="card card--info mb-16">
@@ -133,7 +133,7 @@
                                 </div>
                                 <div class="specs__row">
                                     <div class="specs__k">DEPOT</div>
-                                    <div class="specs__v">@(o.Depot?.Location ?? "—")</div>
+                                    <div class="specs__v">@(o.Depot?.Location ?? "Not specified")</div>
                                 </div>
                                 <div class="specs__row">
                                     <div class="specs__k">REQUIRED BY</div>

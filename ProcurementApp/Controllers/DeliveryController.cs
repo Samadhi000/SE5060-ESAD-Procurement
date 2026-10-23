@@ -3,12 +3,7 @@ using ProcurementApp.Services;
 
 namespace ProcurementApp.Controllers;
 
-/// <summary>
-/// Module 3 — Log Delivery / Goods Receipt (UC3 / SD3). Uses the State pattern (inside
-/// <see cref="IDeliveryService"/>) to decide whether a delivery is allowed and what status
-/// the order moves to afterwards. Screens follow the design's order-detail-deliveries,
-/// record-delivery and delivery-confirmation wireframes.
-/// </summary>
+/// <summary>Module 3: log a delivery (including partial). Uses the State pattern via IDeliveryService.</summary>
 public class DeliveryController : Controller
 {
     private readonly IDeliveryService _service;
@@ -22,7 +17,7 @@ public class DeliveryController : Controller
     // Orders that can still receive deliveries.
     public IActionResult Index() => View(_service.GetDeliverableOrders());
 
-    // Per-order outstanding view with a progress bar per line (order-detail-deliveries).
+    // Per-order outstanding view, with a progress bar per line.
     public IActionResult Items(string id)
     {
         var order = _service.GetOrder(id);
@@ -30,7 +25,6 @@ public class DeliveryController : Controller
         return View(order);
     }
 
-    // Record-delivery form for one order (record-delivery).
     public IActionResult Record(string id)
     {
         var order = _service.GetOrder(id);
@@ -70,17 +64,15 @@ public class DeliveryController : Controller
             return RedirectToAction(nameof(Record), new { id });
         }
 
-        // Carry a short log summary through to the confirmation screen.
         TempData["Reference"] = id;
         TempData["Status"] = result.NewStatus?.ToString();
         TempData["Message"] = result.Message;
         TempData["Summary"] = string.Join("|", (result.Recorded ?? new List<DeliveryLineRequest>())
-            .Select(l => $"{l.ItemDescription} — {l.QuantityDelivered} received"));
+            .Select(l => $"{l.ItemDescription}: {l.QuantityDelivered} received"));
 
         return RedirectToAction(nameof(Confirmation));
     }
 
-    // "Delivery recorded" success screen (delivery-confirmation).
     public IActionResult Confirmation()
     {
         var reference = TempData["Reference"] as string;
